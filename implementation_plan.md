@@ -13,7 +13,7 @@ This document details the architecture, design, and step-by-step implementation 
 
 ---
 
-## 🗄️ Database Schemas (Mongoose)
+## Database Schemas (Mongoose)
 
 ### User Schema
 ```javascript
