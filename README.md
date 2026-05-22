@@ -92,57 +92,10 @@ Follow these instructions to clone and run the application locally on your Windo
      cd backend
      npm run dev
      ```
-     *(Launches Express server on `http://localhost:5000`)*
 
    - **Terminal 2: Start Frontend**
      ```bash
      cd frontend
      npm run dev
      ```
-     *(Launches Vite dev server on `http://localhost:3000`)*
-
 ---
-
-## Scripted Demo Walkthrough (2 to 5 Minutes)
-
-Here is a step-by-step guide matching your required **Demo Video timeline** using the **Local Mock Mode** for frictionless recording:
-
-### Member Registration & Blank State
-1. Open your browser and navigate to `http://localhost:3000`.
-2. Click **Sign up free**.
-3. Input `member@crewflow.com` and password `password123`.
-4. Leave the role toggle selected on **Member** and click **Create Account**.
-5. You will see a beautiful dark, glassmorphism dashboard with an emerald-bordered **[Member]** pill in the top header.
-6. The dashboard display cards (Total, Completed, Pending, Overdue) will show **0** counters, and a placeholder message will state: *"You have not been assigned to any project workspaces yet."*
-
-### Admin Actions & Overdue Task Setup
-1. Click **Sign Out** in the top right.
-2. Under the login email, toggle the selector to **Admin Mode** (or click Sign Up and create an account with the role set to **Admin**).
-3. Input `admin@crewflow.com` and password `password123`. Click **Sign In**.
-4. Notice the header now proudly displays an Indigo-bordered **[Admin]** pill.
-5. In the top header panel, click the indigo **New Project** button.
-6. Input project name `Q3 Core Platform Rollout`, a description, and select `member@crewflow.com` from the member assignment list. Click **Initialize Project**.
-7. Now, click the **New Task** button.
-8. Set target project to `Q3 Core Platform Rollout` and assignee to `member@crewflow.com`.
-9. Input task title: `Design Database Schemas & validation rules`.
-10. Set the **Due Date** to a date **in the past** (e.g., yesterday).
-11. Leave priority as `High` and click **Assign Task**.
-12. **Boom!** The aggregate metrics grid immediately updates:
-    - **Total Tasks**: `1`
-    - **Pending**: `1`
-    - **Overdue Tasks**: Prominently flashes a glowing **`1`** badge styled in bright crimson.
-    - An warning banner labeled **Overdue** flashes with a pulsing animation next to the task item in the workspace board!
-
-### Role Restrictions & Workflow Transition
-1. Click **Sign Out**.
-2. Sign back in as `member@crewflow.com` with `password123` (leaving Dev Role set to **Member**).
-3. Notice that the Member:
-    - **CANNOT** see the "New Project" and "New Task" buttons (enforcing client-side RBAC).
-    - Can see their assigned project workspace `Q3 Core Platform Rollout` and their task.
-    - The metric counts for their dashboard show: Total `1`, Overdue `1` (calculated dynamically based on tasks assigned directly to them).
-4. On the task card, locate the status select dropdown. Click it and transition the status from **To Do** $\rightarrow$ **In Progress**.
-5. Toggle back to **Done**. The dashboard metrics instantly re-aggregate:
-    - **Total Tasks**: `1`
-    - **Completed**: `1`
-    - **Overdue Tasks**: Flashes back to a neutral **`0`** since completed tasks are automatically removed from the overdue aggregation.
-    - The task card turns from To Do/In Progress styling to a solid, emerald-bordered **Done** pill, proving end-to-end database-synchronized state changes!
