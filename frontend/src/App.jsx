@@ -1,39 +1,356 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import HomeView from './components/HomeView';
+import InboxView from './components/InboxView';
+import MyTasksView from './components/MyTasksView';
+import PortfoliosView from './components/PortfoliosView';
+import ProjectDetailsView from './components/ProjectDetailsView';
+import ProjectModal from './components/ProjectModal';
+import TaskModal from './components/TaskModal';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const [authView, setAuthView] = useState('login');
+  const [skippedAuth, setSkippedAuth] = useState(false);
+  
+  // Workspace Views State
+  const [activeModule, setActiveModule] = useState('work'); // 'work' | 'strategy' | 'workflow' | 'people'
+  const [activeView, setActiveView] = useState('home'); // 'home' | 'inbox' | 'my-tasks' | 'portfolios' | 'project-details'
+  const [activeProjectId, setActiveProjectId] = useState(null);
 
-  if (loading) {
+  // Core Data States
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [error, setError] = useState('');
+
+  // Modals Visibility
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+
+  // Seed mock data when auth is skipped (guest/offline mode)
+  useEffect(() => {
+    if (skippedAuth) {
+      const mockProjects = [
+        {
+          _id: 'mock_project_1',
+          name: 'CrewFlow Product Launch',
+          description: 'Go-to-market plan, social media outreach, and system monitoring checks.',
+          createdBy: 'guest_id',
+          members: [
+            { _id: 'guest_id', email: 'guest@crewflow.com', role: 'Admin' },
+            { _id: 'member_id_1', email: 'member@crewflow.com', role: 'Member' },
+            { _id: 'admin_id_1', email: 'admin@crewflow.com', role: 'Admin' }
+          ]
+        },
+        {
+          _id: 'mock_project_2',
+          name: 'Monochrome Overhaul',
+          description: 'Transitioning visual assets and dashboard panels to high-contrast grayscale.',
+          createdBy: 'guest_id',
+          members: [
+            { _id: 'guest_id', email: 'guest@crewflow.com', role: 'Admin' },
+            { _id: 'member_id_1', email: 'member@crewflow.com', role: 'Member' }
+          ]
+        }
+      ];
+
+      const mockTasks = [
+        {
+          _id: 'mock_task_1',
+          projectId: 'mock_project_1',
+          projectName: 'CrewFlow Product Launch',
+          assignedTo: { _id: 'guest_id', email: 'guest@crewflow.com' },
+          title: 'Review landing page accessibility parameters',
+          description: 'Audit accessibility colors and check form accessibility guidelines.',
+          dueDate: new Date().toISOString().split('T')[0],
+          priority: 'High',
+          status: 'To Do',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: 'mock_task_2',
+          projectId: 'mock_project_1',
+          projectName: 'CrewFlow Product Launch',
+          assignedTo: { _id: 'guest_id', email: 'guest@crewflow.com' },
+          title: 'Draft press release for beta release',
+          description: 'Mention the new gorgeous monochrome styling scheme.',
+          dueDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+          priority: 'Medium',
+          status: 'To Do',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: 'mock_task_3',
+          projectId: 'mock_project_2',
+          projectName: 'Monochrome Overhaul',
+          assignedTo: { _id: 'member_id_1', email: 'member@crewflow.com' },
+          title: 'Audit visual consistency of lists and modals',
+          description: 'Double check all form placeholders in monochrome light theme.',
+          dueDate: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+          priority: 'Low',
+          status: 'In Progress',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      setProjects(mockProjects);
+      setTasks(mockTasks);
+    }
+  }, [skippedAuth]);
+
+  // Initial Data Fetching from backend APIs
+  const fetchWorkspaceData = async () => {
+    if (!token) return;
+    setLoadingData(true);
+    setError('');
+    try {
+      // 1. Retrieve Projects
+      const projectsRes = await fetch('/api/projects', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      let projectsData = [];
+      if (projectsRes.ok) {
+        projectsData = await projectsRes.json();
+        setProjects(projectsData);
+      } else {
+        throw new Error('Failed to retrieve projects from database');
+      }
+
+      // 2. Retrieve Tasks
+      const tasksRes = await fetch('/api/tasks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        setTasks(tasksData);
+      } else {
+        throw new Error('Failed to retrieve tasks from database');
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Error occurred updating workspace data');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && token) {
+      fetchWorkspaceData();
+    }
+  }, [user, token]);
+
+  // Synchronizers & Handlers for dynamic tasks/projects updates
+  const handleTaskStatusUpdated = (updatedTask) => {
+    setTasks(prev => prev.map(t => t._id === updatedTask._id ? updatedTask : t));
+  };
+
+  const handleTaskDeleted = (taskId) => {
+    setTasks(prev => prev.filter(t => t._id !== taskId));
+  };
+
+  const handleProjectDeleted = (projectId) => {
+    setProjects(prev => prev.filter(p => p._id !== projectId));
+    setTasks(prev => prev.filter(t => (t.projectId?._id || t.projectId) !== projectId));
+    if (activeProjectId === projectId) {
+      setActiveProjectId(null);
+      setActiveView('home');
+    }
+  };
+
+  const handleProjectCreated = (newProject) => {
+    setProjects(prev => [newProject, ...prev]);
+    setShowProjectModal(false);
+    // Open the new project view automatically
+    setActiveProjectId(newProject._id);
+    setActiveView('project-details');
+  };
+
+  const handleTaskCreated = (newTask) => {
+    setTasks(prev => [newTask, ...prev]);
+    setShowTaskModal(false);
+  };
+
+  // Switch workspace view layout
+  const renderActiveView = () => {
+    if (loadingData && projects.length === 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-[#f9f9f9] gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
+          <p className="text-xs text-[#777777] font-semibold uppercase tracking-wider">Syncing Workspace Ledger...</p>
+        </div>
+      );
+    }
+
+    if (activeModule !== 'work') {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-[#f9f9f9] select-none">
+          <div className="h-12 w-12 rounded bg-[#e2e2e2] flex items-center justify-center mb-4 text-[#777777]">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[#1a1c1c] uppercase tracking-wider font-sans">Under Construction</h2>
+          <p className="text-[10px] text-[#777777] mt-2 font-semibold uppercase tracking-wider text-center">
+            The {activeModule} module is currently being built.
+          </p>
+        </div>
+      );
+    }
+
+    switch (activeView) {
+      case 'home':
+        return (
+          <HomeView 
+            projects={projects}
+            tasks={tasks}
+            onStatusUpdated={handleTaskStatusUpdated}
+            onNewTask={() => setShowTaskModal(true)}
+            onNewProject={() => setShowProjectModal(true)}
+            setActiveView={setActiveView}
+            setActiveProjectId={setActiveProjectId}
+          />
+        );
+      case 'inbox':
+        return (
+          <InboxView 
+            tasks={tasks}
+            projects={projects}
+          />
+        );
+      case 'my-tasks':
+        return (
+          <MyTasksView 
+            projects={projects}
+            tasks={tasks}
+            onStatusUpdated={handleTaskStatusUpdated}
+            onTaskCreated={handleTaskCreated}
+            token={token}
+          />
+        );
+      case 'portfolios':
+        return (
+          <PortfoliosView 
+            projects={projects}
+            tasks={tasks}
+            setActiveView={setActiveView}
+            setActiveProjectId={setActiveProjectId}
+          />
+        );
+      case 'project-details':
+        return (
+          <ProjectDetailsView 
+            projectId={activeProjectId}
+            projects={projects}
+            tasks={tasks}
+            onStatusUpdated={handleTaskStatusUpdated}
+            onTaskDeleted={handleTaskDeleted}
+            onDeleteProject={handleProjectDeleted}
+            onNewTask={() => setShowTaskModal(true)}
+            token={token}
+          />
+        );
+      default:
+        return (
+          <div className="flex-1 flex items-center justify-center text-xs text-[#777777] italic">
+            Select a view from the sidebar to continue.
+          </div>
+        );
+    }
+  };
+
+  // Auth synchronization state loader
+  if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#f9f9f9] select-none">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent shadow-lg shadow-indigo-500/20"></div>
-          <p className="text-xs text-indigo-400 tracking-widest font-semibold uppercase animate-pulse">Syncing CrewFlow Security...</p>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-black border-t-transparent"></div>
+          <p className="text-[10px] text-[#777777] tracking-widest font-bold uppercase animate-pulse">Syncing CrewFlow Security...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  // Not logged in -> Show monochrome Auth screens
+  if (!user && !skippedAuth) {
     return authView === 'login' ? (
-      <Login onSwitchToSignup={() => setAuthView('signup')} />
+      <Login onSwitchToSignup={() => setAuthView('signup')} onSkip={() => setSkippedAuth(true)} />
     ) : (
       <Signup onSwitchToLogin={() => setAuthView('login')} />
     );
   }
 
+  // Logged in -> Master Split-Pane Layout
   return (
-    <div className="min-h-screen bg-slate-950 pb-16 relative">
-      <Navbar />
-      <main>
-        <Dashboard />
-      </main>
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f9f9f9]">
+      
+      {/* Left Charcoal Sidebar Container */}
+      <Sidebar 
+        activeModule={activeModule}
+        setActiveModule={setActiveModule}
+        activeView={activeView} 
+        setActiveView={setActiveView} 
+        projects={projects}
+        activeProjectId={activeProjectId}
+        setActiveProjectId={setActiveProjectId}
+      />
+
+      {/* Right Canvas Workspace Column */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        
+        {/* Sticky Top Grayscale Navbar */}
+        <Header 
+          activeView={activeView}
+          activeProjectId={activeProjectId}
+          projects={projects}
+          onRefresh={fetchWorkspaceData}
+          onNewProject={() => setShowProjectModal(true)}
+          onNewTask={() => setShowTaskModal(true)}
+          loading={loadingData}
+        />
+
+        {/* Dynamic View Canvas Area */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+          {error && (
+            <div className="mx-6 mt-4 p-3 rounded border border-red-200 bg-red-50 text-xs font-semibold text-red-700 flex items-center justify-between">
+              <span>{error}</span>
+              <button onClick={() => setError('')} className="underline uppercase tracking-wider text-[10px]">dismiss</button>
+            </div>
+          )}
+
+          {renderActiveView()}
+        </div>
+
+      </div>
+
+      {/* 3. Global Project Creator Modal overlay */}
+      {showProjectModal && (
+        <ProjectModal 
+          token={token}
+          onClose={() => setShowProjectModal(false)}
+          onProjectCreated={handleProjectCreated}
+        />
+      )}
+
+      {/* 4. Global Task Assigner Modal overlay */}
+      {showTaskModal && (
+        <TaskModal 
+          token={token}
+          projects={projects}
+          selectedProjectId={activeProjectId || projects[0]?._id}
+          onClose={() => setShowTaskModal(false)}
+          onTaskCreated={handleTaskCreated}
+        />
+      )}
+
     </div>
   );
 }

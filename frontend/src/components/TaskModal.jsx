@@ -51,6 +51,35 @@ const TaskModal = ({ token, projects, selectedProjectId, onClose, onTaskCreated 
 
     setSubmitting(true);
     try {
+      if (!token) {
+        // Guest mode / token-less simulation
+        const selectedProject = projects.find(p => p._id === projectId);
+        const assignedMember = projectMembers.find(m => m._id === assignedTo) || { _id: assignedTo, email: 'guest@crewflow.com' };
+        
+        const newTask = {
+          _id: 'task_' + Math.random().toString(36).substring(2, 9),
+          projectId,
+          projectName: selectedProject ? selectedProject.name : 'Simulated Project',
+          assignedTo: {
+            _id: assignedMember._id || assignedMember,
+            email: assignedMember.email || 'guest@crewflow.com'
+          },
+          title,
+          description,
+          dueDate,
+          priority,
+          status: 'To Do',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        setTimeout(() => {
+          onTaskCreated(newTask);
+          setSubmitting(false);
+        }, 300);
+        return;
+      }
+
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
@@ -77,38 +106,40 @@ const TaskModal = ({ token, projects, selectedProjectId, onClose, onTaskCreated 
     } catch (err) {
       setError(err.message);
     } finally {
-      setSubmitting(false);
+      if (token) {
+        setSubmitting(false);
+      }
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl glass p-6 shadow-2xl glow-border relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs select-none">
+      <div className="w-full max-w-lg rounded glass p-6 shadow-xl relative bg-white border border-[#e2e2e2]">
         
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white rounded-lg p-1.5 hover:bg-slate-800/40 transition-all"
+          className="absolute top-4 right-4 text-[#777777] hover:text-[#000000] rounded p-1 hover:bg-[#f3f3f4] transition-all"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4.5 w-4.5" />
         </button>
 
-        <h3 className="text-xl font-bold text-white mb-1.5 font-sans">Create Task</h3>
-        <p className="text-xs text-slate-400 mb-6">Assign a specific workflow milestone to a workspace team member.</p>
+        <h3 className="text-base font-bold text-[#1a1c1c] mb-1 font-sans">Create Task</h3>
+        <p className="text-[11px] text-[#5e5e5e] mb-6">Assign a specific workflow milestone to a workspace team member.</p>
 
         {error && (
-          <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
+          <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Target Project *</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5e5e5e] mb-1.5">Target Project *</label>
             <select
               required
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-slate-300 bg-slate-950 focus:text-slate-100"
+              className="glass-input block w-full rounded py-2 px-3 text-xs focus:border-black bg-white"
             >
               <option value="" disabled>-- Choose a Project --</option>
               {projects.map(p => (
@@ -118,13 +149,13 @@ const TaskModal = ({ token, projects, selectedProjectId, onClose, onTaskCreated 
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Assignee *</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5e5e5e] mb-1.5">Assignee *</label>
             <select
               required
               disabled={!projectId}
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
-              className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-slate-300 bg-slate-950 focus:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="glass-input block w-full rounded py-2 px-3 text-xs focus:border-black bg-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="" disabled>
                 {projectId ? '-- Select a Team Member --' : '-- Choose Project First --'}
@@ -134,55 +165,55 @@ const TaskModal = ({ token, projects, selectedProjectId, onClose, onTaskCreated 
               ))}
             </select>
             {projectId && projectMembers.length === 0 && (
-              <p className="text-[10px] text-amber-400 mt-1 flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" /> Warning: No members are assigned to this project yet. Please assign members first.
+              <p className="text-[9px] text-amber-700 mt-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Warning: No members are assigned to this project yet.
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Task Title *</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5e5e5e] mb-1.5">Task Title *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Design relational data schemas"
-              className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-slate-100 placeholder-slate-500"
+              className="glass-input block w-full rounded py-2 px-3 text-xs placeholder-[#a0a0a0]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Description</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5e5e5e] mb-1.5">Description</label>
             <textarea
               rows="2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Explicit sub-tasks and acceptance criteria..."
-              className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-slate-100 placeholder-slate-500"
+              className="glass-input block w-full rounded py-2 px-3 text-xs placeholder-[#a0a0a0]"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-indigo-400" /> Due Date *
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5e5e5e] mb-1.5 flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-[#5e5e5e]" /> Due Date *
               </label>
               <input
                 type="date"
                 required
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-slate-300 focus:text-slate-100 bg-slate-950"
+                className="glass-input block w-full rounded py-2 px-3 text-xs focus:border-black bg-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Priority Tier</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#5e5e5e] mb-1.5">Priority Tier</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-slate-300 bg-slate-950 focus:text-slate-100"
+                className="glass-input block w-full rounded py-2 px-3 text-xs focus:border-black bg-white"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -191,24 +222,24 @@ const TaskModal = ({ token, projects, selectedProjectId, onClose, onTaskCreated 
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-900">
+          <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-[#eeeeee]">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white border border-transparent hover:border-slate-800 hover:bg-slate-900/40 transition-all"
+              className="rounded border border-[#c6c6c6] px-4 py-2 text-xs font-semibold text-[#5e5e5e] hover:text-[#000000] hover:bg-[#f3f3f4] transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-lg shadow-indigo-600/15"
+              className="btn-black text-xs font-bold py-2.5 px-4 flex items-center gap-1.5"
             >
               {submitting ? (
-                <div className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent"></div>
+                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
               ) : (
                 <>
-                  <Plus className="h-3.5 w-3.5" /> Assign Task
+                  <Plus className="h-3.5 w-3.5 text-white" /> Assign Task
                 </>
               )}
             </button>
