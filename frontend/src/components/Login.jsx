@@ -167,6 +167,28 @@ const Login = ({ onSwitchToSignup, onSkip }) => {
           </div>
         </form>
 
+        <div className="mt-4 border-t border-[#e2e2e2] pt-4">
+          <p className="text-[10px] text-[#777777] font-semibold tracking-wider uppercase mb-2">Demo Accounts</p>
+          <div className="grid grid-cols-2 gap-2 text-[10px] text-[#5e5e5e] leading-relaxed">
+            <div 
+              className="p-2 bg-[#f9f9f9] border border-[#e2e2e2] rounded cursor-pointer hover:border-[#c6c6c6] transition-colors"
+              onClick={() => { setEmail('admin@crewflow.com'); setPassword('password123'); setRole('Admin'); }}
+            >
+              <span className="font-bold text-black block mb-0.5">Admin</span>
+              <span className="select-all">admin@crewflow.com</span><br/>
+              pass: <span className="select-all">password123</span>
+            </div>
+            <div 
+              className="p-2 bg-[#f9f9f9] border border-[#e2e2e2] rounded cursor-pointer hover:border-[#c6c6c6] transition-colors"
+              onClick={() => { setEmail('member@crewflow.com'); setPassword('password123'); setRole('Member'); }}
+            >
+              <span className="font-bold text-black block mb-0.5">Member</span>
+              <span className="select-all">member@crewflow.com</span><br/>
+              pass: <span className="select-all">password123</span>
+            </div>
+          </div>
+        </div>
+
         <div className="text-center pt-2">
           <p className="text-xs text-[#777777]">
             Don't have an account?{' '}
