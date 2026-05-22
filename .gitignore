@@ -18,3 +18,7 @@ build/
 .vscode/
 .idea/
 .DS_Store
+
+# Ignore Assets and Inspiration
+Inspiration/
+Assests/
