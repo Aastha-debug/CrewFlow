@@ -1,11 +1,14 @@
 {
   "name": "crewflow-monorepo",
   "version": "1.0.0",
-  "description": "Root package.json for Railway deployment",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "install": "cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && node server.js"
+    "build": "npm run build --workspace=frontend",
+    "start": "npm start --workspace=backend"
   },
   "engines": {
     "node": ">=18.0.0"
