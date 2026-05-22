@@ -76,6 +76,17 @@ router.post('/mock-login', async (req, res) => {
     // Generate a consistent mock UID based on email
     // Try finding user in database
     let user = await User.findOne({ email });
+    
+    // Auto-seed demo accounts on a fresh database
+    if (!user && (email === 'admin@crewflow.com' || email === 'member@crewflow.com')) {
+      user = await User.create({
+        firebaseUid: `mock_uid_${email.replace(/[@.]/g, '_')}`,
+        email,
+        role: email === 'admin@crewflow.com' ? 'Admin' : 'Member',
+        mockPassword: 'password123'
+      });
+    }
+
     if (!user) {
       return res.status(401).json({ message: 'User does not exist. Please create an account.' });
     }
