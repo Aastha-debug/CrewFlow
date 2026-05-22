@@ -10,7 +10,8 @@ import {
   Plus, 
   Clock, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  UserPlus
 } from 'lucide-react';
 
 const HomeView = ({ 
@@ -19,6 +20,7 @@ const HomeView = ({
   onStatusUpdated, 
   onNewTask, 
   onNewProject,
+  onOpenInviteModal,
   setActiveView,
   setActiveProjectId 
 }) => {
@@ -133,6 +135,8 @@ const HomeView = ({
       console.error('Error toggling task:', error);
     }
   };
+
+
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f9f9f9] px-8 py-8 space-y-8 select-none">
@@ -338,9 +342,20 @@ const HomeView = ({
 
           {/* Team Collaborators List */}
           <div className="glass rounded p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-4.5 w-4.5 text-[#1a1c1c]" />
-              <h3 className="text-sm font-bold text-[#1a1c1c] uppercase tracking-wider">Team Members</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-4.5 w-4.5 text-[#1a1c1c]" />
+                <h3 className="text-sm font-bold text-[#1a1c1c] uppercase tracking-wider">Team Members</h3>
+              </div>
+              {effectiveUser?.role === 'Admin' && (
+                <button 
+                  onClick={onOpenInviteModal}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-white bg-black hover:bg-neutral-800 px-2.5 py-1 rounded shadow-sm transition-colors"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  <span>Invite</span>
+                </button>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -365,6 +380,8 @@ const HomeView = ({
         </div>
 
       </div>
+
+
 
     </div>
   );

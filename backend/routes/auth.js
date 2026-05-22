@@ -8,7 +8,7 @@ const { protect, JWT_SECRET, USE_FIREBASE_ADMIN } = require('../middleware/auth'
 // @desc    Register a new user mapped to a Firebase UID (either real or mock)
 // @access  Public
 router.post('/signup', async (req, res) => {
-  const { firebaseUid, email, role } = req.body;
+  const { firebaseUid, email, role, password } = req.body;
 
   if (!firebaseUid || !email) {
     return res.status(400).json({ message: 'Please provide firebaseUid and email' });
@@ -30,7 +30,8 @@ router.post('/signup', async (req, res) => {
     user = await User.create({
       firebaseUid,
       email,
-      role: role || 'Member'
+      role: role || 'Member',
+      mockPassword: password
     });
 
     res.status(201).json({
@@ -73,17 +74,35 @@ router.post('/mock-login', async (req, res) => {
 
   try {
     // Generate a consistent mock UID based on email
-    const safeUid = `mock_uid_${email.replace(/[@.]/g, '_')}`;
-
-    // Try finding user in database; if missing, auto-create them
-    let user = await User.findOne({ firebaseUid: safeUid });
+    // Try finding user in database
+    let user = await User.findOne({ email });
     if (!user) {
-      user = await User.create({
-        firebaseUid: safeUid,
-        email,
-        role: role || 'Member'
-      });
+      return res.status(401).json({ message: 'User does not exist. Please create an account.' });
     }
+
+    // Auto-correct legacy demo accounts if they got saved with the wrong role
+    if (email === 'admin@crewflow.com' && user.role !== 'Admin') {
+      user.role = 'Admin';
+      await user.save();
+    } else if (email === 'member@crewflow.com' && user.role !== 'Member') {
+      user.role = 'Member';
+      await user.save();
+    }
+
+    const storedPassword = user.mockPassword || 'password123';
+    if (password !== storedPassword) {
+      return res.status(401).json({ message: 'Incorrect password.' });
+    }
+
+    if (user.role !== role) {
+      if (role === 'Admin') {
+        return res.status(403).json({ message: 'You are not an admin. Please select Member Mode and use your member credentials.' });
+      } else {
+        return res.status(403).json({ message: 'You are an admin. Please select Admin Mode and use your admin credentials.' });
+      }
+    }
+
+    const safeUid = user.firebaseUid;
 
     // Generate JWT signed with local mock secret
     const token = jwt.sign({ uid: safeUid, email: user.email }, JWT_SECRET, { expiresIn: '7d' });

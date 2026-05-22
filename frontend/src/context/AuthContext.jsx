@@ -109,7 +109,8 @@ export const AuthProvider = ({ children }) => {
           body: JSON.stringify({
             firebaseUid: credential.user.uid,
             email,
-            role
+            role,
+            password
           })
         });
 
@@ -133,7 +134,8 @@ export const AuthProvider = ({ children }) => {
           body: JSON.stringify({
             firebaseUid: `mock_uid_${email.replace(/[@.]/g, '_')}`,
             email,
-            role
+            role,
+            password
           })
         });
 

@@ -14,13 +14,19 @@ import {
   CheckCircle2,
   Triangle,
   GitMerge,
-  Users
+  Users,
+  Calendar,
+  Settings,
+  UserPlus,
+  Sliders
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, projects = [], activeProjectId, setActiveProjectId }) => {
+const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, projects = [], activeProjectId, setActiveProjectId, onLogout, onOpenInviteModal, onNewProject }) => {
   const { user, logout } = useAuth();
   const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const effectiveUser = user || { email: 'guest@crewflow.com', role: 'Admin' };
 
@@ -45,7 +51,11 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
       <aside className="w-[72px] bg-[#222325] border-r border-[#2d2e30] flex flex-col items-center py-4 gap-6">
         
         {/* Menu Icon */}
-        <button className="text-[#a5a6a7] hover:text-white transition-colors mb-2">
+        <button 
+          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+          className="text-[#a5a6a7] hover:text-white transition-colors mb-2"
+          title="Toggle Sidebar"
+        >
           <Menu className="h-6 w-6" />
         </button>
 
@@ -57,7 +67,10 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
             return (
               <button
                 key={mod.id}
-                onClick={() => setActiveModule(mod.id)}
+                onClick={() => {
+                  setActiveModule(mod.id);
+                  setIsSidebarExpanded(true); // Auto-expand when module clicked
+                }}
                 className="flex flex-col items-center gap-1.5 w-full group"
               >
                 <div className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all ${
@@ -77,20 +90,135 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
           })}
         </div>
 
+        {/* User Session bottom panel */}
+        <div className="mt-auto flex flex-col items-center gap-3 w-full px-2 pb-2 relative">
+          {/* User Card (Slim) */}
+          <button 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className={`flex items-center justify-center h-10 w-10 rounded-full text-white border transition-all text-sm font-bold tracking-wider ${
+              isProfileMenuOpen 
+                ? 'bg-[#3b3c3e] border-[#5e5e5e] shadow-md' 
+                : 'bg-neutral-800 border-neutral-700 hover:border-[#5e5e5e]'
+            }`}
+            title="Profile & Settings"
+          >
+            {effectiveUser.email.split('@')[0].slice(0, 2).toUpperCase()}
+          </button>
+
+          {/* Profile Popover Menu */}
+          {isProfileMenuOpen && (
+            <>
+              {/* Invisible overlay to close on click outside */}
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setIsProfileMenuOpen(false)}
+              />
+              
+              <div className="absolute bottom-2 left-[76px] w-64 bg-white border border-[#e2e2e2] rounded-md shadow-xl z-50 py-2 flex flex-col animate-scale-in text-[#1a1c1c] font-sans">
+                
+                {/* Header Info */}
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-[#fca5a5] flex items-center justify-center text-[#991b1b] text-xl font-bold flex-shrink-0">
+                    {effectiveUser.email.split('@')[0].slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-bold truncate leading-tight mb-0.5">{effectiveUser.email.split('@')[0]}</p>
+                    <p className="text-xs text-[#777777] truncate">{effectiveUser.email}</p>
+                  </div>
+                </div>
+
+                {/* Status Block */}
+                <div className="px-4 py-2 border-b border-[#e2e2e2] mb-1">
+                  <button 
+                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[13px] text-[#1a1c1c] border border-[#e2e2e2] rounded hover:bg-[#f9f9f9] transition-colors"
+                  >
+                    <Calendar className="h-4 w-4 text-[#777777]" />
+                    <span>Set out of office</span>
+                  </button>
+                </div>
+
+                {/* Workspace Block */}
+                <div className="py-1 border-b border-[#e2e2e2] flex flex-col">
+                  {effectiveUser.role === 'Admin' && (
+                    <button 
+                      onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                    >
+                      <Sliders className="h-4 w-4 text-[#777777]" />
+                      <span>Admin console</span>
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => { if(onNewProject) onNewProject(); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                  >
+                    <Plus className="h-4 w-4 text-[#777777]" />
+                    <span>New workspace</span>
+                  </button>
+                  {effectiveUser.role === 'Admin' && (
+                    <button 
+                      onClick={() => { if(onOpenInviteModal) onOpenInviteModal(); setIsProfileMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                    >
+                      <UserPlus className="h-4 w-4 text-[#777777]" />
+                      <span>Invite to CrewFlow</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Personal Block */}
+                <div className="py-1 border-b border-[#e2e2e2] flex flex-col">
+                  <button 
+                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                  >
+                    <User className="h-4 w-4 text-[#777777]" />
+                    <span>Profile</span>
+                  </button>
+                  <button 
+                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                  >
+                    <Settings className="h-4 w-4 text-[#777777]" />
+                    <span>Settings</span>
+                  </button>
+                  <button 
+                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                  >
+                    <Plus className="h-4 w-4 text-[#777777]" />
+                    <span>Add another account</span>
+                  </button>
+                </div>
+
+                {/* Action Block */}
+                <div className="py-1 flex flex-col">
+                  <button 
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      logout();
+                      if (onLogout) onLogout();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left text-[#1a1c1c]"
+                  >
+                    <LogOut className="h-4 w-4 text-[#777777]" />
+                    <span>Log out</span>
+                  </button>
+                </div>
+
+              </div>
+            </>
+          )}
+        </div>
+
       </aside>
 
       {/* 2. Secondary Sidebar */}
+      {isSidebarExpanded && (
       <aside className="w-56 bg-[#1e1f21] text-[#c5c6c7] flex flex-col border-r border-[#2d2e30]">
         
-        {/* Header / Create Button */}
-        <div className="h-16 border-b border-[#2d2e30] flex items-center px-4">
-          <button className="flex items-center gap-2 bg-transparent hover:bg-[#2d2e30] border border-[#3b3c3e] px-4 py-1.5 rounded-full transition-all w-full justify-center">
-            <div className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-white">
-              <Plus className="h-3 w-3" />
-            </div>
-            <span className="text-white text-sm font-medium">Create</span>
-          </button>
-        </div>
+
 
         {/* Navigation Pane */}
         <div className="flex-1 overflow-y-auto py-4 space-y-6">
@@ -182,29 +310,9 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
 
         </div>
 
-        {/* User Session bottom panel */}
-        <div className="p-3 border-t border-[#2d2e30] bg-[#1a1b1d] flex flex-col gap-2">
-          {/* User Card */}
-          <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-[#252628]/40 border border-[#2d2e30]/30">
-            <div className="h-7 w-7 rounded-full bg-neutral-800 flex items-center justify-center text-white border border-neutral-700">
-              <User className="h-3.5 w-3.5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-white truncate leading-none">{effectiveUser.email.split('@')[0]}</p>
-              <p className="text-[10px] text-[#8a8b8c] truncate mt-0.5">{effectiveUser.role}</p>
-            </div>
-          </div>
 
-          {/* Sign Out Trigger */}
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 rounded px-3 py-2 text-xs font-medium text-[#a5a6a7] hover:text-white hover:bg-red-500/10 hover:border-red-500/20 border border-transparent transition-all"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Sign Out</span>
-          </button>
-        </div>
       </aside>
+      )}
 
     </div>
   );

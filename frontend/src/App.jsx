@@ -11,6 +11,8 @@ import PortfoliosView from './components/PortfoliosView';
 import ProjectDetailsView from './components/ProjectDetailsView';
 import ProjectModal from './components/ProjectModal';
 import TaskModal from './components/TaskModal';
+import InviteModal from './components/InviteModal';
+import { CheckCircle } from 'lucide-react';
 
 function AppContent() {
   const { user, token, loading: authLoading } = useAuth();
@@ -31,6 +33,8 @@ function AppContent() {
   // Modals Visibility
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteSuccessToast, setInviteSuccessToast] = useState(false);
 
   // Seed mock data when auth is skipped (guest/offline mode)
   useEffect(() => {
@@ -215,6 +219,7 @@ function AppContent() {
             onStatusUpdated={handleTaskStatusUpdated}
             onNewTask={() => setShowTaskModal(true)}
             onNewProject={() => setShowProjectModal(true)}
+            onOpenInviteModal={() => setShowInviteModal(true)}
             setActiveView={setActiveView}
             setActiveProjectId={setActiveProjectId}
           />
@@ -301,6 +306,9 @@ function AppContent() {
         projects={projects}
         activeProjectId={activeProjectId}
         setActiveProjectId={setActiveProjectId}
+        onLogout={() => setSkippedAuth(false)}
+        onOpenInviteModal={() => setShowInviteModal(true)}
+        onNewProject={() => setShowProjectModal(true)}
       />
 
       {/* Right Canvas Workspace Column */}
@@ -348,6 +356,25 @@ function AppContent() {
           selectedProjectId={activeProjectId || projects[0]?._id}
           onClose={() => setShowTaskModal(false)}
           onTaskCreated={handleTaskCreated}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {inviteSuccessToast && (
+        <div className="fixed bottom-6 right-6 bg-black text-white px-4 py-3 rounded shadow-lg flex items-center gap-2 animate-fade-in z-50">
+          <CheckCircle className="h-4 w-4 text-green-400" />
+          <span className="text-xs font-semibold">Invitation sent to {inviteSuccessToast}</span>
+        </div>
+      )}
+
+      {/* 5. Global Invite Modal overlay */}
+      {showInviteModal && (
+        <InviteModal 
+          onClose={() => setShowInviteModal(false)}
+          onSuccess={(email) => {
+            setInviteSuccessToast(email);
+            setTimeout(() => setInviteSuccessToast(false), 3000);
+          }}
         />
       )}
 
