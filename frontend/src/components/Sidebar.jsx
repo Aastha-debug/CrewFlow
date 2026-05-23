@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, projects = [], activeProjectId, setActiveProjectId, onLogout, onOpenInviteModal, onNewProject }) => {
+const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveView, projects = [], activeProjectId, setActiveProjectId, onLogout, onOpenInviteModal, onNewProject }) => {
   const { user, logout } = useAuth();
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
@@ -49,7 +49,13 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
   ];
 
   return (
-    <div className="flex h-screen flex-shrink-0 select-none">
+    <div 
+      className={`flex h-screen flex-shrink-0 select-none transition-all duration-300 ease-in-out ${
+        isOpen 
+          ? (isSidebarExpanded ? 'w-[296px] opacity-100 visible' : 'w-[72px] opacity-100 visible') 
+          : 'w-0 opacity-0 invisible overflow-hidden'
+      }`}
+    >
       
       {/* 1. Primary Slim Sidebar */}
       <aside className="w-[72px] bg-[#222325] border-r border-[#2d2e30] flex flex-col items-center py-4 gap-6">

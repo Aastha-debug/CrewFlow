@@ -368,20 +368,19 @@ function AppContent() {
       <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
         
         {/* Left Charcoal Sidebar Container (Slides under the navbar) */}
-        {isSidebarOpen && (
-          <Sidebar 
-            activeModule={activeModule}
-            setActiveModule={setActiveModule}
-            activeView={activeView} 
-            setActiveView={setActiveView} 
-            projects={projects}
-            activeProjectId={activeProjectId}
-            setActiveProjectId={setActiveProjectId}
-            onLogout={() => setSkippedAuth(false)}
-            onOpenInviteModal={() => setShowInviteModal(true)}
-            onNewProject={() => setShowProjectModal(true)}
-          />
-        )}
+        <Sidebar 
+          isOpen={isSidebarOpen}
+          activeModule={activeModule}
+          setActiveModule={setActiveModule}
+          activeView={activeView} 
+          setActiveView={setActiveView} 
+          projects={projects}
+          activeProjectId={activeProjectId}
+          setActiveProjectId={setActiveProjectId}
+          onLogout={() => setSkippedAuth(false)}
+          onOpenInviteModal={() => setShowInviteModal(true)}
+          onNewProject={() => setShowProjectModal(true)}
+        />
 
         {/* Right Canvas Workspace Column */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-[#f9f9f9]">
