@@ -44,10 +44,10 @@ const CustomizePanel = ({
   return (
     <>
       <div 
-        className="fixed inset-0 z-40 bg-black/10 transition-opacity" 
+        className="absolute inset-0 z-30 bg-black/10 transition-opacity" 
         onClick={onClose}
       />
-      <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-2xl z-50 flex flex-col border-l border-[#e2e2e2] animate-slide-in-right select-none">
+      <div className="absolute inset-y-0 right-0 w-80 bg-white shadow-2xl z-40 flex flex-col border-l border-[#e2e2e2] animate-slide-in-right select-none">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e2e2]">
           <h2 className="text-xl font-semibold text-[#1a1c1c]">Customize home</h2>
           <button onClick={onClose} className="p-1 text-[#777777] hover:text-[#1a1c1c] rounded hover:bg-[#f3f3f4] transition-colors">

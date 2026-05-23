@@ -12,6 +12,7 @@ import ProjectDetailsView from './components/ProjectDetailsView';
 import ProjectModal from './components/ProjectModal';
 import TaskModal from './components/TaskModal';
 import InviteModal from './components/InviteModal';
+import BrowseProjectsView from './components/BrowseProjectsView';
 import { CheckCircle } from 'lucide-react';
 
 function AppContent() {
@@ -241,6 +242,18 @@ function AppContent() {
             token={token}
           />
         );
+      case 'projects':
+        return (
+          <BrowseProjectsView 
+            projects={projects}
+            tasks={tasks}
+            onNewProject={() => setShowProjectModal(true)}
+            setActiveView={setActiveView}
+            setActiveProjectId={setActiveProjectId}
+            onProjectCreated={handleProjectCreated}
+            token={token}
+          />
+        );
       case 'portfolios':
         return (
           <PortfoliosView 
@@ -319,6 +332,9 @@ function AppContent() {
           activeView={activeView}
           activeProjectId={activeProjectId}
           projects={projects}
+          tasks={tasks}
+          setActiveView={setActiveView}
+          setActiveProjectId={setActiveProjectId}
           onRefresh={fetchWorkspaceData}
           onNewProject={() => setShowProjectModal(true)}
           onNewTask={() => setShowTaskModal(true)}

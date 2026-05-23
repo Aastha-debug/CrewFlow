@@ -18,7 +18,8 @@ import {
   Calendar,
   Settings,
   UserPlus,
-  Sliders
+  Sliders,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -34,6 +35,7 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
     { id: 'home', label: 'Home', icon: Home },
     { id: 'inbox', label: 'Inbox', icon: Inbox },
     { id: 'my-tasks', label: 'My tasks', icon: CheckSquare },
+    { id: 'projects', label: 'Projects', icon: ClipboardList },
     { id: 'portfolios', label: 'Portfolios', icon: Folder },
   ];
 

@@ -193,7 +193,7 @@ const HomeView = ({
   );
 
   return (
-    <div className={`flex-1 overflow-y-auto ${homeBgColor} transition-colors duration-500 px-8 py-8 space-y-8 select-none relative`}>
+    <div className={`flex-1 ${isCustomizeOpen ? 'overflow-hidden' : 'overflow-y-auto'} ${homeBgColor} transition-colors duration-500 px-8 py-8 space-y-8 select-none relative`}>
       
       {/* 1. Header Greeting Banner */}
       <div className={`flex flex-col md:flex-row md:items-center justify-between pb-6 border-b ${isDarkBg ? 'border-white/20' : 'border-[#e2e2e2]'}`}>
