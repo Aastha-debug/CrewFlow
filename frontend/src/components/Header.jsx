@@ -291,8 +291,17 @@ const Header = ({
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Brand Group: Brand Name */}
+        {/* Brand Group: Logo + Brand Name */}
         <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
+          {/* Brand Logo (Inverted to White with Screen Blending for perfect dark-mode integration) */}
+          <img 
+            src="/logo.png" 
+            alt="CrewFlow Logo" 
+            className="h-6 w-auto object-contain invert mix-blend-screen opacity-95 hover:opacity-100 transition-opacity"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
           {/* CrewFlow Brand Name Text */}
           <span className="text-sm font-extrabold tracking-tight text-white select-none">
             Crew<span className="text-[#3b66c5]">Flow</span>
