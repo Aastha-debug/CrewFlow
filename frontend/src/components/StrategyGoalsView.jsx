@@ -23,12 +23,57 @@ import {
   Layers,
   Save,
   CheckCircle2,
-  UserPlus
+  UserPlus,
+  Sliders
 } from 'lucide-react';
 
 const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId }) => {
   const [activeTab, setActiveTab] = useState('my-goals'); // 'my-goals' | 'team-goals' | 'strategy-map'
   
+  // Dashboard Header actions state (favorite star and chevron dropdown)
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isGoalsMenuOpen, setIsGoalsMenuOpen] = useState(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [goalsName, setGoalsName] = useState("Workspace Objectives");
+  const [goalsDesc, setGoalsDesc] = useState("Define corporate milestones, track KRs, and align connected projects.");
+  const [goalsColor, setGoalsColor] = useState('amber'); // 'amber' | 'blue' | 'pink' | 'emerald' | 'purple'
+  const [isSetColorOpen, setIsSetColorOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const goalsMenuRef = useRef(null);
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    triggerToast("Goals view link copied to clipboard!");
+    setIsGoalsMenuOpen(false);
+  };
+
+  const handleDuplicate = () => {
+    setGoals(prev => [
+      ...prev,
+      ...prev.map(g => ({
+        ...g,
+        _id: `goal_dup_${Date.now()}_${Math.random()}`,
+        name: `${g.name} (Copy)`
+      }))
+    ]);
+    triggerToast("Goals duplicated!");
+    setIsGoalsMenuOpen(false);
+  };
+
+  const handleDeleteGoals = () => {
+    if (confirm("Are you sure you want to delete all goals in this view?")) {
+      setGoals([]);
+      triggerToast("All goals deleted from this view.");
+    }
+    setIsGoalsMenuOpen(false);
+  };
+
   // Goals Seed Data
   const [goals, setGoals] = useState([
     {
@@ -167,6 +212,10 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
         setOwnerDropdownActive(false);
         setTeamDropdownActive(false);
         setMapDropdownActive(false);
+      }
+      if (goalsMenuRef.current && !goalsMenuRef.current.contains(e.target)) {
+        setIsGoalsMenuOpen(false);
+        setIsSetColorOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -360,13 +409,149 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
     <div className="flex-1 overflow-y-auto bg-white px-8 py-8 space-y-6 select-none font-sans relative text-gray-800">
       
       {/* 1. Header with workspace objectives */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#e2e2e2] gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2.5">
-            <Trophy className="h-6 w-6 text-amber-500" />
-            <span>Workspace Objectives</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">Define corporate milestones, track KRs, and align connected projects.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#e2e2e2] gap-4" ref={goalsMenuRef}>
+        <div className="space-y-1 text-left">
+          <div className="flex items-center gap-2 relative">
+            <h2 className={`text-2xl font-bold tracking-tight flex items-center gap-2.5 ${
+              goalsColor === 'pink' ? 'text-pink-600' :
+              goalsColor === 'emerald' ? 'text-emerald-600' :
+              goalsColor === 'amber' ? 'text-amber-600' :
+              goalsColor === 'purple' ? 'text-purple-600' :
+              'text-[#3b66c5]'
+            }`}>
+              <Trophy className="h-6 w-6" />
+              <span>{goalsName}</span>
+            </h2>
+
+            {/* Chevron down button and favorite star next to it */}
+            <div className="flex items-center gap-1.5">
+              <button 
+                onClick={() => setIsGoalsMenuOpen(!isGoalsMenuOpen)}
+                className="p-1 hover:bg-[#f3f3f4] rounded text-gray-500 hover:text-black transition-colors"
+                title="Goals Actions Menu"
+              >
+                <ChevronDown className="h-4.5 w-4.5" />
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setIsFavorite(!isFavorite);
+                  triggerToast(isFavorite ? "Removed from favorites" : "Added to favorites");
+                }}
+                className="p-1 hover:bg-[#f3f3f4] rounded transition-colors"
+                title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+              >
+                <span className={`text-sm leading-none ${isFavorite ? 'text-amber-500' : 'text-gray-400'}`}>
+                  {isFavorite ? '★' : '☆'}
+                </span>
+              </button>
+            </div>
+
+            {/* Goals Actions Menu Dropdown Popover */}
+            {isGoalsMenuOpen && (
+              <div className="absolute left-0 mt-8 top-0 w-56 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col text-[#1a1c1c] font-normal animate-scale-in text-xs">
+                
+                {/* Edit goals details */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingDetails(true);
+                    setIsGoalsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#f5f5f6] flex items-center gap-2.5 font-semibold text-[#1a1c1c]"
+                >
+                  <Sliders className="h-4 w-4 text-gray-500" />
+                  <span>Edit details</span>
+                </button>
+
+                {/* Set color */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsSetColorOpen(!isSetColorOpen)}
+                    className="w-full text-left px-4 py-2 hover:bg-[#f5f5f6] flex items-center justify-between font-semibold text-[#1a1c1c]"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`h-4.5 w-4.5 rounded ${
+                        goalsColor === 'pink' ? 'bg-pink-500' :
+                        goalsColor === 'emerald' ? 'bg-emerald-500' :
+                        goalsColor === 'amber' ? 'bg-amber-500' :
+                        goalsColor === 'purple' ? 'bg-purple-500' :
+                        'bg-[#3b66c5]'
+                      }`} />
+                      <span>Set color</span>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+                  </button>
+
+                  {/* Sub-menu color picker */}
+                  {isSetColorOpen && (
+                    <div className="absolute left-full top-0 ml-1 w-36 bg-white border border-[#e2e2e2] rounded-lg shadow-lg z-50 py-1 flex flex-col animate-scale-in">
+                      {['blue', 'pink', 'emerald', 'amber', 'purple'].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => {
+                            setGoalsColor(color);
+                            setIsSetColorOpen(false);
+                            setIsGoalsMenuOpen(false);
+                            triggerToast(`Goals theme set to ${color}`);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#f5f5f6] text-[11px] capitalize font-semibold flex items-center gap-2"
+                        >
+                          <div className={`h-3 w-3 rounded-full ${
+                            color === 'pink' ? 'bg-pink-500' :
+                            color === 'emerald' ? 'bg-emerald-500' :
+                            color === 'amber' ? 'bg-amber-500' :
+                            color === 'purple' ? 'bg-purple-500' :
+                            'bg-[#3b66c5]'
+                          }`} />
+                          <span>{color}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Copy goals link */}
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="w-full text-left px-4 py-2 hover:bg-[#f5f5f6] flex items-center gap-2.5 font-semibold text-[#1a1c1c]"
+                >
+                  <Link2 className="h-4 w-4 text-gray-500" />
+                  <span>Copy goals link</span>
+                </button>
+
+                {/* Duplicate */}
+                <button
+                  type="button"
+                  onClick={handleDuplicate}
+                  className="w-full text-left px-4 py-2 hover:bg-[#f5f5f6] flex items-center gap-2.5 font-semibold text-[#1a1c1c]"
+                >
+                  <Plus className="h-4 w-4 text-gray-500" />
+                  <span>Duplicate view</span>
+                </button>
+
+                <div className="border-t border-[#eeeeee] my-1"></div>
+
+                {/* Delete goals */}
+                <button
+                  type="button"
+                  onClick={handleDeleteGoals}
+                  className="w-full text-left px-4 py-2 hover:bg-rose-50 text-rose-600 flex items-center gap-2.5 font-semibold"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete all goals</span>
+                </button>
+
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-gray-500 mt-0.5">
+            {goalsDesc}
+          </p>
         </div>
 
         {/* Tab switcher */}
@@ -1519,6 +1704,72 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Edit Goals Details Modal */}
+      {isEditingDetails && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-fade-in select-none">
+          <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-2xl w-full max-w-md p-6 relative flex flex-col gap-4 text-gray-800 text-left">
+            <button 
+              onClick={() => setIsEditingDetails(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black p-1 hover:bg-[#f3f3f4] rounded"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-base font-bold text-black flex items-center gap-2">
+              <Sliders className="h-4.5 w-4.5 text-[#3b66c5]" />
+              <span>Edit Goals Details</span>
+            </h3>
+
+            <form onSubmit={(e) => { e.preventDefault(); setIsEditingDetails(false); triggerToast("Goals details saved!"); }} className="space-y-4">
+              <div>
+                <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Goals View Name</label>
+                <input 
+                  type="text"
+                  required
+                  value={goalsName}
+                  onChange={(e) => setGoalsName(e.target.value)}
+                  className="w-full text-xs p-2 border border-gray-300 rounded outline-none focus:border-[#3b66c5] text-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Description / Sub-bar</label>
+                <textarea 
+                  value={goalsDesc}
+                  onChange={(e) => setGoalsDesc(e.target.value)}
+                  rows="3"
+                  className="w-full text-xs p-2 border border-gray-300 rounded outline-none focus:border-[#3b66c5] text-black"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#eeeeee]">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingDetails(false)}
+                  className="px-3 py-1.5 border border-gray-300 text-xs font-semibold rounded text-gray-500 hover:bg-[#f3f3f4]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-[#3b66c5] hover:bg-[#2e55aa] text-white text-xs font-bold rounded shadow-xs"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Info Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2.5 rounded shadow-lg text-xs font-semibold z-50 animate-fade-in flex items-center gap-2">
+          <Check className="w-3.5 h-3.5 text-emerald-400" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
