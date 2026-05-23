@@ -95,6 +95,18 @@ const Header = ({
         return 'Browse projects';
       case 'portfolios':
         return 'Portfolios';
+      case 'goals':
+        return 'Goals';
+      case 'reporting':
+        return 'Reporting';
+      case 'resourcing':
+        return 'Resourcing';
+      case 'new-dashboard':
+        return 'New Dashboard';
+      case 'my-organization':
+        return 'My Organization';
+      case 'my-impact':
+        return 'My Impact';
       default:
         return 'CrewFlow';
     }
@@ -268,8 +280,8 @@ const Header = ({
   return (
     <header className="h-14 border-b border-[#2d2e30] bg-[#1e1f21] text-white flex items-center justify-between px-6 select-none flex-shrink-0 relative z-30">
       
-      {/* Sidebar Toggle, CrewFlow Logo with Name, and Active Section Name */}
-      <div className="flex items-center gap-3.5">
+      {/* Sidebar Toggle, Logo + Brand Name, and Active Section Name */}
+      <div className="flex items-center gap-3">
         {/* Sidebar Toggle Hamburger Button */}
         <button
           onClick={onToggleSidebar}
@@ -279,20 +291,22 @@ const Header = ({
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Logo and Name from Asset */}
-        <div className="flex items-center h-8 flex-shrink-0 pr-1.5 gap-2 border-r border-[#2d2e30]">
+        {/* Brand Group: Logo Icon + Text Name */}
+        <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
+          {/* Logo Icon (Reverted from Black to White using CSS filter for perfect dark mode visibility) */}
           <img 
-            src="/logo-title.png" 
-            alt="CrewFlow Logo" 
-            className="h-6 object-contain opacity-95 hover:opacity-100 transition-opacity"
+            src="/logo.png" 
+            alt="CrewFlow Brand Logo" 
+            className="h-5.5 w-auto object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity"
             onError={(e) => {
+              // Hide icon if load fails
               e.target.style.display = 'none';
-              const textFallback = document.createElement('span');
-              textFallback.className = 'text-sm font-bold tracking-tight text-white';
-              textFallback.innerHTML = 'Crew<span class="text-[#3b66c5]">Flow</span>';
-              e.target.parentNode.appendChild(textFallback);
             }}
           />
+          {/* CrewFlow Brand Name Text */}
+          <span className="text-sm font-extrabold tracking-tight text-white select-none">
+            Crew<span className="text-[#3b66c5]">Flow</span>
+          </span>
         </div>
 
         {/* Active Section Name */}

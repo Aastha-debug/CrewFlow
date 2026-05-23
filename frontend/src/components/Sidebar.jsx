@@ -65,14 +65,18 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
               <button
                 key={mod.id}
                 onClick={() => {
-                  setActiveModule(mod.id);
-                  setIsSidebarExpanded(true); // Auto-expand when module clicked
-                  if (mod.id === 'strategy') {
-                    setActiveView('goals');
-                    setActiveProjectId(null);
-                  } else if (mod.id === 'work') {
-                    setActiveView('home');
-                    setActiveProjectId(null);
+                  if (activeModule === mod.id && isSidebarExpanded) {
+                    setIsSidebarExpanded(false); // Collapse sub-sidebar if clicking the active module
+                  } else {
+                    setActiveModule(mod.id);
+                    setIsSidebarExpanded(true); // Switch active module and expand sub-sidebar
+                    if (mod.id === 'strategy') {
+                      setActiveView('goals');
+                      setActiveProjectId(null);
+                    } else if (mod.id === 'work') {
+                      setActiveView('home');
+                      setActiveProjectId(null);
+                    }
                   }
                 }}
                 className="flex flex-col items-center gap-1.5 w-full group"
@@ -218,9 +222,15 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
 
       </aside>
 
-      {/* 2. Secondary Sidebar */}
-      {isSidebarExpanded && (
-      <aside className="w-56 bg-[#1e1f21] text-[#c5c6c7] flex flex-col border-r border-[#2d2e30]">
+      {/* 2. Secondary Sidebar (Slide-in sub-sidebar) */}
+      <aside 
+        className={`bg-[#1e1f21] text-[#c5c6c7] flex flex-col border-r border-[#2d2e30] transition-all duration-300 ease-in-out ${
+          isSidebarExpanded 
+            ? 'w-56 opacity-100 visible' 
+            : 'w-0 opacity-0 invisible overflow-hidden border-r-0'
+        }`}
+      >
+        <div className="w-56 h-full flex flex-col">
         
 
 
@@ -436,8 +446,8 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
         </div>
 
 
+        </div>
       </aside>
-      )}
 
     </div>
   );

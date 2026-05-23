@@ -19,7 +19,8 @@ import {
   Search,
   Sparkles,
   ArrowRight,
-  Settings
+  Settings,
+  Move
 } from 'lucide-react';
 
 const StrategyReportingView = ({ projects = [], tasks = [] }) => {
