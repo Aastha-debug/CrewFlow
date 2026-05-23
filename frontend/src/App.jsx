@@ -346,44 +346,46 @@ function AppContent() {
 
   // Logged in -> Master Split-Pane Layout
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#f9f9f9]">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#f9f9f9]">
       
-      {/* Left Charcoal Sidebar Container */}
-      {isSidebarOpen && (
-        <Sidebar 
-          activeModule={activeModule}
-          setActiveModule={setActiveModule}
-          activeView={activeView} 
-          setActiveView={setActiveView} 
-          projects={projects}
-          activeProjectId={activeProjectId}
-          setActiveProjectId={setActiveProjectId}
-          onLogout={() => setSkippedAuth(false)}
-          onOpenInviteModal={() => setShowInviteModal(true)}
-          onNewProject={() => setShowProjectModal(true)}
-        />
-      )}
+      {/* Sticky Top Grayscale Navbar (Spans full-width, stationary) */}
+      <Header 
+        activeView={activeView}
+        activeProjectId={activeProjectId}
+        projects={projects}
+        tasks={tasks}
+        setActiveView={setActiveView}
+        setActiveProjectId={setActiveProjectId}
+        onRefresh={fetchWorkspaceData}
+        onNewProject={() => setShowProjectModal(true)}
+        onNewTask={() => setShowTaskModal(true)}
+        onOpenInviteModal={() => setShowInviteModal(true)}
+        loading={loadingData}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
 
-      {/* Right Canvas Workspace Column */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      {/* Bottom Container (Row: Sidebar + Main Content Area under navbar) */}
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
         
-        {/* Sticky Top Grayscale Navbar */}
-        <Header 
-          activeView={activeView}
-          activeProjectId={activeProjectId}
-          projects={projects}
-          tasks={tasks}
-          setActiveView={setActiveView}
-          setActiveProjectId={setActiveProjectId}
-          onRefresh={fetchWorkspaceData}
-          onNewProject={() => setShowProjectModal(true)}
-          onNewTask={() => setShowTaskModal(true)}
-          loading={loadingData}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+        {/* Left Charcoal Sidebar Container (Slides under the navbar) */}
+        {isSidebarOpen && (
+          <Sidebar 
+            activeModule={activeModule}
+            setActiveModule={setActiveModule}
+            activeView={activeView} 
+            setActiveView={setActiveView} 
+            projects={projects}
+            activeProjectId={activeProjectId}
+            setActiveProjectId={setActiveProjectId}
+            onLogout={() => setSkippedAuth(false)}
+            onOpenInviteModal={() => setShowInviteModal(true)}
+            onNewProject={() => setShowProjectModal(true)}
+          />
+        )}
 
-        {/* Dynamic View Canvas Area */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        {/* Right Canvas Workspace Column */}
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-[#f9f9f9]">
+          
           {error && (
             <div className="mx-6 mt-4 p-3 rounded border border-red-200 bg-red-50 text-xs font-semibold text-red-700 flex items-center justify-between">
               <span>{error}</span>
@@ -392,6 +394,7 @@ function AppContent() {
           )}
 
           {renderActiveView()}
+
         </div>
 
       </div>

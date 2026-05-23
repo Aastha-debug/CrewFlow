@@ -8,6 +8,7 @@ import {
   Briefcase, 
   BookOpen, 
   Plus, 
+  FolderPlus,
   Clock, 
   Sparkles,
   ArrowRight,
@@ -209,7 +210,39 @@ const HomeView = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
+        <div className="flex items-center gap-4 mt-4 md:mt-0 flex-wrap">
+          {effectiveUser?.role === 'Admin' && (
+            <>
+              {/* New Project Action */}
+              <button 
+                onClick={onNewProject}
+                className={`flex items-center gap-2 px-4 py-2 border rounded shadow-sm font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${
+                  isDarkBg 
+                  ? 'bg-white/10 hover:bg-white/15 text-white border-white/20 hover:border-white/30' 
+                  : 'bg-white text-[#1a1c1c] hover:bg-gray-50 border-[#e2e2e2] hover:border-gray-300'
+                }`}
+                title="Create a new workspace project"
+              >
+                <FolderPlus className="h-4 w-4 text-[#3b66c5]" />
+                <span>New Project</span>
+              </button>
+
+              {/* New Task Action */}
+              <button 
+                onClick={onNewTask}
+                className={`flex items-center gap-2 px-4 py-2 rounded shadow-sm font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${
+                  isDarkBg 
+                  ? 'bg-white text-black hover:bg-gray-100 border border-white' 
+                  : 'bg-neutral-900 text-white hover:bg-neutral-800 border border-transparent'
+                }`}
+                title="Create a new workspace task"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New Task</span>
+              </button>
+            </>
+          )}
+
           <div className={`flex items-center gap-2 px-3.5 py-2 ${isDarkBg ? 'bg-white/10 border-white/20 text-white' : 'bg-white border-[#e2e2e2] text-[#1a1c1c]'} border rounded shadow-sm`}>
             <Clock className={`h-4 w-4 ${isDarkBg ? 'text-gray-300' : 'text-[#777777]'}`} />
             <span className="text-sm font-semibold font-mono">{formattedTime}</span>
