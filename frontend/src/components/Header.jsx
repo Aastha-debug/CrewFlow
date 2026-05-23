@@ -291,18 +291,8 @@ const Header = ({
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Brand Group: Logo Icon + Text Name */}
+        {/* Brand Group: Brand Name */}
         <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
-          {/* Logo Icon (Reverted from Black to White using CSS filter for perfect dark mode visibility) */}
-          <img 
-            src="/logo.png" 
-            alt="CrewFlow Brand Logo" 
-            className="h-5.5 w-auto object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity"
-            onError={(e) => {
-              // Hide icon if load fails
-              e.target.style.display = 'none';
-            }}
-          />
           {/* CrewFlow Brand Name Text */}
           <span className="text-sm font-extrabold tracking-tight text-white select-none">
             Crew<span className="text-[#3b66c5]">Flow</span>
