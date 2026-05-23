@@ -17,7 +17,13 @@ import {
   ChevronDown,
   ChevronRight,
   Sparkles,
-  Link2
+  Link2,
+  Trash2,
+  Filter,
+  Layers,
+  Save,
+  CheckCircle2,
+  UserPlus
 } from 'lucide-react';
 
 const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId }) => {
@@ -33,7 +39,8 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       timePeriod: 'Q3 2026',
       owner: 'guest@crewflow.com',
       team: 'Engineering',
-      type: 'my'
+      type: 'my',
+      parentObjective: 'Become the #1 Collaboration suite'
     },
     {
       _id: 'goal_2',
@@ -43,7 +50,8 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       timePeriod: 'FY 2026',
       owner: 'guest@crewflow.com',
       team: 'Marketing',
-      type: 'my'
+      type: 'my',
+      parentObjective: 'Become the #1 Collaboration suite'
     },
     {
       _id: 'goal_3',
@@ -53,7 +61,8 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       timePeriod: 'Q2 2026',
       owner: 'member@crewflow.com',
       team: 'Design',
-      type: 'team'
+      type: 'team',
+      parentObjective: 'Grayscale Interface Overhaul'
     },
     {
       _id: 'goal_4',
@@ -63,7 +72,8 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       timePeriod: 'Q3 2026',
       owner: 'admin@crewflow.com',
       team: 'Engineering',
-      type: 'team'
+      type: 'team',
+      parentObjective: 'Become the #1 Collaboration suite'
     },
     {
       _id: 'goal_5',
@@ -73,7 +83,8 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       timePeriod: 'Q4 2026',
       owner: 'guest@crewflow.com',
       team: 'Partnerships',
-      type: 'my'
+      type: 'my',
+      parentObjective: 'B2B Corporate Scaling'
     }
   ]);
 
@@ -85,6 +96,18 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
   const [newGoalTime, setNewGoalTime] = useState('Q3 2026');
   const [newGoalTeam, setNewGoalTeam] = useState('Engineering');
   const [newGoalOwner, setNewGoalOwner] = useState('guest@crewflow.com');
+  const [newGoalParent, setNewGoalParent] = useState('Become the #1 Collaboration suite');
+
+  // Custom Inline popups/menus inside cell editing
+  const [activeCellEdit, setActiveCellEdit] = useState(null); // { goalId, fieldId } or null
+  const [ownerDropdownActive, setOwnerDropdownActive] = useState(false);
+  const [teamDropdownActive, setTeamDropdownActive] = useState(false);
+  const [mapDropdownActive, setMapDropdownActive] = useState(false);
+
+  // Strategy Map dynamic filter Period
+  const [strategyMapPeriod, setStrategyMapPeriod] = useState('All');
+  const [isMapPeriodOpen, setIsMapPeriodOpen] = useState(false);
+  const [isCreatingFromMap, setIsCreatingFromMap] = useState(false);
 
   // Interactive Custom Column States
   const [columns, setColumns] = useState([
@@ -96,22 +119,34 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
     { id: 'team', label: 'Accountable team', width: 'w-40' }
   ]);
 
-  // Sorting & Filtering States
-  const [activeHeaderDropdown, setActiveHeaderDropdown] = useState(null); // columnId or null
+  // Grid toolbar downbar popovers states
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [isSortPopoverOpen, setIsSortPopoverOpen] = useState(false);
+  const [isGroupPopoverOpen, setIsGroupPopoverOpen] = useState(false);
+  const [isSaveViewPopoverOpen, setIsSaveViewPopoverOpen] = useState(false);
+  
+  // Filtering & Sorting values
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [ownerFilter, setOwnerFilter] = useState('All');
+  const [timeFilter, setTimeFilter] = useState('All');
   const [sortField, setSortField] = useState('name');
   const [sortAsc, setSortAsc] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('All');
-  
-  // Custom Field Form States (Add Field Option dialogs)
+  const [groupByField, setGroupByField] = useState('none'); // 'none' | 'status' | 'team' | 'timePeriod'
+
+  // Custom Field Form States
   const [isAddFieldOpen, setIsAddFieldOpen] = useState(false);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState('text'); // 'date' | 'people' | 'text' | 'number' | 'select' | 'multiselect'
-  const [newFieldPopoverStep, setNewFieldPopoverStep] = useState(null); // 'define' | null
-  const [newFieldOptions, setNewFieldOptions] = useState(''); // comma-separated for select/multiselect
+  const [newFieldOptions, setNewFieldOptions] = useState(''); // comma-separated options
+  const [newFieldNumberFormat, setNewFieldNumberFormat] = useState('integer'); // 'integer' | 'decimal' | 'currency' | 'percent'
+  const [customOptionsList, setCustomOptionsList] = useState([]);
+  const [currentOptionText, setCurrentOptionText] = useState('');
   
-  // Popup / Dropdown Refs
+  // Refs
   const headerMenuRef = useRef(null);
   const addFieldRef = useRef(null);
+  const toolbarRef = useRef(null);
+  const inlineEditRef = useRef(null);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -120,26 +155,46 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       }
       if (addFieldRef.current && !addFieldRef.current.contains(e.target)) {
         setIsAddFieldOpen(false);
-        setNewFieldPopoverStep(null);
+      }
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target)) {
+        setIsFilterPopoverOpen(false);
+        setIsSortPopoverOpen(false);
+        setIsGroupPopoverOpen(false);
+        setIsSaveViewPopoverOpen(false);
+      }
+      if (inlineEditRef.current && !inlineEditRef.current.contains(e.target)) {
+        setActiveCellEdit(null);
+        setOwnerDropdownActive(false);
+        setTeamDropdownActive(false);
+        setMapDropdownActive(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // Filter and Sort goals
+  const [activeHeaderDropdown, setActiveHeaderDropdown] = useState(null); // columnId or null
+
+  // Sort and filter goals logic
   const displayGoals = useMemo(() => {
     let result = goals.filter(g => {
-      // Tab matching
       if (activeTab === 'my-goals') return g.type === 'my';
       if (activeTab === 'team-goals') return g.type === 'team';
-      return true;
+      return true; // Map view handled separately or matches all
     });
 
+    // Apply Filter Downbar selections
     if (statusFilter !== 'All') {
       result = result.filter(g => g.status === statusFilter);
     }
+    if (ownerFilter !== 'All') {
+      result = result.filter(g => g.owner.includes(ownerFilter));
+    }
+    if (timeFilter !== 'All') {
+      result = result.filter(g => g.timePeriod === timeFilter);
+    }
 
+    // Apply Sort Downbar selections
     result.sort((a, b) => {
       let valA = a[sortField] !== undefined ? a[sortField] : '';
       let valB = b[sortField] !== undefined ? b[sortField] : '';
@@ -153,21 +208,35 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
     });
 
     return result;
-  }, [goals, activeTab, statusFilter, sortField, sortAsc]);
+  }, [goals, activeTab, statusFilter, ownerFilter, timeFilter, sortField, sortAsc]);
 
-  // Handle move column left/right
+  // Group goals if group is active
+  const groupedGoals = useMemo(() => {
+    if (groupByField === 'none') {
+      return { 'All Objectives': displayGoals };
+    }
+
+    const groups = {};
+    displayGoals.forEach(g => {
+      const key = g[groupByField] || 'Unassigned';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(g);
+    });
+
+    return groups;
+  }, [displayGoals, groupByField]);
+
+  // Columns Move Handlers
   const handleMoveColumn = (colId, direction) => {
     const idx = columns.findIndex(c => c.id === colId);
     if (idx === -1) return;
 
     const newCols = [...columns];
     if (direction === 'left' && idx > 0) {
-      // Swap with left neighbor
       const temp = newCols[idx - 1];
       newCols[idx - 1] = newCols[idx];
       newCols[idx] = temp;
     } else if (direction === 'right' && idx < columns.length - 1) {
-      // Swap with right neighbor
       const temp = newCols[idx + 1];
       newCols[idx + 1] = newCols[idx];
       newCols[idx] = temp;
@@ -176,7 +245,25 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
     setActiveHeaderDropdown(null);
   };
 
-  // Add Custom Field Handler
+  // Add custom option to options list during field creation
+  const handleAddCustomOption = () => {
+    if (!currentOptionText.trim()) return;
+    const colors = [
+      'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'bg-rose-50 text-rose-700 border-rose-200',
+      'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'bg-amber-50 text-amber-700 border-amber-200',
+      'bg-purple-50 text-purple-700 border-purple-200'
+    ];
+    const optionObj = {
+      label: currentOptionText.trim(),
+      color: colors[customOptionsList.length % colors.length]
+    };
+    setCustomOptionsList([...customOptionsList, optionObj]);
+    setCurrentOptionText('');
+  };
+
+  // Create custom field
   const handleCreateCustomField = (e) => {
     e.preventDefault();
     if (!newFieldName.trim()) return;
@@ -188,28 +275,26 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       width: 'w-36',
       isCustom: true,
       fieldType: newFieldType,
-      options: newFieldOptions ? newFieldOptions.split(',').map(s => s.trim()) : []
+      numberFormat: newFieldType === 'number' ? newFieldNumberFormat : null,
+      options: ['select', 'multiselect'].includes(newFieldType) ? customOptionsList : []
     };
 
     setColumns([...columns, newCol]);
-    
-    // Seed blank value for all goals
+
     setGoals(prev => prev.map(g => ({
       ...g,
-      [newColId]: newFieldType === 'number' ? 0 : ''
+      [newColId]: newFieldType === 'number' ? 0 : newFieldType === 'multiselect' ? [] : ''
     })));
 
-    // Reset Form
     setNewFieldName('');
     setNewFieldType('text');
-    setNewFieldOptions('');
+    setCustomOptionsList([]);
     setIsAddFieldOpen(false);
-    setNewFieldPopoverStep(null);
   };
 
-  // Create Goal Handler
+  // Create Goal
   const handleCreateGoal = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!newGoalName.trim()) return;
 
     const newGoalObj = {
@@ -220,15 +305,22 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       timePeriod: newGoalTime,
       owner: newGoalOwner,
       team: newGoalTeam,
-      type: activeTab === 'my-goals' ? 'my' : 'team'
+      type: activeTab === 'my-goals' ? 'my' : 'team',
+      parentObjective: newGoalParent
     };
 
-    setGoals([...goals, newGoalObj]);
+    setGoals([newGoalObj, ...goals]);
     setNewGoalName('');
     setIsCreatingGoal(false);
+    setIsCreatingFromMap(false);
   };
 
-  // Inline updater for goal field changes
+  // Delete Goal
+  const handleDeleteGoal = (goalId) => {
+    setGoals(prev => prev.filter(g => g._id !== goalId));
+  };
+
+  // Update cell field
   const handleUpdateGoalField = (goalId, fieldId, value) => {
     setGoals(prev => prev.map(g => {
       if (g._id === goalId) {
@@ -238,7 +330,6 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
     }));
   };
 
-  // Helper colors for status badges
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'On track':
@@ -254,27 +345,38 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
     }
   };
 
+  // Available Seed Users for selects
+  const seedUsers = [
+    { email: 'guest@crewflow.com', name: 'Aaryan Ranjan', initials: 'AR', color: 'bg-purple-100 text-purple-700' },
+    { email: 'member@crewflow.com', name: 'Sneha Sharma', initials: 'SS', color: 'bg-pink-100 text-pink-700' },
+    { email: 'admin@crewflow.com', name: 'Kabir Dev', initials: 'KD', color: 'bg-emerald-100 text-emerald-700' }
+  ];
+
+  // Accounts list
+  const seedTeams = ['Engineering', 'Design', 'Marketing', 'Product', 'Partnerships'];
+  const seedParents = ['Become the #1 Collaboration suite', 'Grayscale Interface Overhaul', 'B2B Corporate Scaling'];
+
   return (
-    <div className="flex-1 overflow-y-auto bg-white px-8 py-8 space-y-6 select-none font-sans relative">
+    <div className="flex-1 overflow-y-auto bg-white px-8 py-8 space-y-6 select-none font-sans relative text-gray-800">
       
-      {/* 1. Header and Navigation Row */}
+      {/* 1. Header with workspace objectives */}
       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#e2e2e2] gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#1a1c1c] tracking-tight flex items-center gap-2.5">
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2.5">
             <Trophy className="h-6 w-6 text-amber-500" />
             <span>Workspace Objectives</span>
           </h2>
-          <p className="text-xs text-[#777777] mt-0.5">Define corporate milestones, track KRs, and align connected projects.</p>
+          <p className="text-xs text-gray-500 mt-0.5">Define corporate milestones, track KRs, and align connected projects.</p>
         </div>
 
-        {/* Sub-Tabs Selector */}
+        {/* Tab switcher */}
         <div className="flex items-center bg-[#f3f3f4] p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('my-goals')}
             className={`text-xs px-3.5 py-1.5 rounded-md font-semibold transition-all ${
               activeTab === 'my-goals' 
                 ? 'bg-white text-black shadow-xs' 
-                : 'text-[#777777] hover:text-black'
+                : 'text-gray-500 hover:text-black'
             }`}
           >
             My goals
@@ -284,7 +386,7 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
             className={`text-xs px-3.5 py-1.5 rounded-md font-semibold transition-all ${
               activeTab === 'team-goals' 
                 ? 'bg-white text-black shadow-xs' 
-                : 'text-[#777777] hover:text-black'
+                : 'text-gray-500 hover:text-black'
             }`}
           >
             Team goals
@@ -294,7 +396,7 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
             className={`text-xs px-3.5 py-1.5 rounded-md font-semibold transition-all ${
               activeTab === 'strategy-map' 
                 ? 'bg-white text-black shadow-xs' 
-                : 'text-[#777777] hover:text-black'
+                : 'text-gray-500 hover:text-black'
             }`}
           >
             Strategy map
@@ -302,40 +404,216 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
         </div>
       </div>
 
-      {/* 2. Primary Tabs View Render */}
+      {/* 2. Grid Sheets Content */}
       {activeTab !== 'strategy-map' ? (
         <div className="space-y-4">
           
-          {/* Action Row Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#fafafb] p-3 rounded-lg border border-[#e2e2e2]">
-            <div className="flex items-center gap-3">
+          {/* Advanced Toolbar: Filter, Sort, Group, Save view */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#fafafb] p-3 rounded-lg border border-[#e2e2e2]" ref={toolbarRef}>
+            <div className="flex items-center gap-2 flex-wrap">
               
-              {/* Filter by Status */}
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-bold text-[#777777]">Filter status:</span>
-                <select 
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="text-xs border border-[#c6c6c6] bg-white rounded px-2.5 py-1 hover:border-[#1a1c1c] outline-none text-[#1a1c1c]"
+              {/* Filter Downbar trigger */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsFilterPopoverOpen(!isFilterPopoverOpen)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border rounded text-xs font-semibold bg-white text-gray-700 hover:border-gray-400 ${
+                    statusFilter !== 'All' || ownerFilter !== 'All' || timeFilter !== 'All' ? 'border-[#3b66c5] text-[#3b66c5]' : 'border-gray-300'
+                  }`}
                 >
-                  <option value="All">All Statuses</option>
-                  <option value="On track">On track</option>
-                  <option value="At risk">At risk</option>
-                  <option value="Off track">Off track</option>
-                  <option value="Completed">Completed</option>
-                </select>
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>Filter</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                {/* Filter downbar active */}
+                {isFilterPopoverOpen && (
+                  <div className="absolute left-0 mt-2 w-64 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-50 p-4 flex flex-col gap-4 animate-scale-in">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Filters Options</span>
+                    
+                    {/* Status */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase font-bold text-gray-500">Status</label>
+                      <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded p-1.5 bg-white outline-none focus:border-[#3b66c5]"
+                      >
+                        <option value="All">All statuses</option>
+                        <option value="On track">On track</option>
+                        <option value="At risk">At risk</option>
+                        <option value="Off track">Off track</option>
+                        <option value="Completed">Completed</option>
+                      </select>
+                    </div>
+
+                    {/* Owner */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase font-bold text-gray-500">Owner</label>
+                      <select 
+                        value={ownerFilter}
+                        onChange={(e) => setOwnerFilter(e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded p-1.5 bg-white outline-none focus:border-[#3b66c5]"
+                      >
+                        <option value="All">All owners</option>
+                        <option value="guest">guest</option>
+                        <option value="member">member</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    </div>
+
+                    {/* Time period */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase font-bold text-gray-500">Time period</label>
+                      <select 
+                        value={timeFilter}
+                        onChange={(e) => setTimeFilter(e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded p-1.5 bg-white outline-none focus:border-[#3b66c5]"
+                      >
+                        <option value="All">All periods</option>
+                        <option value="Q2 2026">Q2 2026</option>
+                        <option value="Q3 2026">Q3 2026</option>
+                        <option value="Q4 2026">Q4 2026</option>
+                        <option value="FY 2026">FY 2026</option>
+                      </select>
+                    </div>
+
+                    <button 
+                      onClick={() => { setStatusFilter('All'); setOwnerFilter('All'); setTimeFilter('All'); setIsFilterPopoverOpen(false); }}
+                      className="w-full text-center text-[10px] font-bold text-rose-600 hover:underline uppercase pt-1 border-t border-[#eeeeee]"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Quick statistics */}
-              <div className="hidden sm:flex items-center gap-2 bg-[#f3f3f4] text-[#777777] text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#e2e2e2]">
-                <Activity className="h-3 w-3 text-emerald-500" />
-                <span>{displayGoals.length} goals mapped</span>
+              {/* Sort Downbar trigger */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsSortPopoverOpen(!isSortPopoverOpen)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded text-xs font-semibold bg-white text-gray-700 hover:border-gray-400"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span>Sort: {sortField}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                {/* Sort downbar active */}
+                {isSortPopoverOpen && (
+                  <div className="absolute left-0 mt-2 w-48 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-50 p-3 flex flex-col gap-2 animate-scale-in">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-1.5">Sort Options</span>
+                    <button 
+                      onClick={() => { setSortField('name'); setSortAsc(true); setIsSortPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Name A - Z
+                    </button>
+                    <button 
+                      onClick={() => { setSortField('status'); setSortAsc(true); setIsSortPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Status value
+                    </button>
+                    <button 
+                      onClick={() => { setSortField('progress'); setSortAsc(false); setIsSortPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Progress % (High-Low)
+                    </button>
+                    <button 
+                      onClick={() => { setSortField('timePeriod'); setSortAsc(true); setIsSortPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Time period
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Group Downbar trigger */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsGroupPopoverOpen(!isGroupPopoverOpen)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border rounded text-xs font-semibold bg-white text-gray-700 hover:border-gray-400 ${
+                    groupByField !== 'none' ? 'border-[#9969c9] text-[#9969c9]' : 'border-gray-300'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Group: {groupByField === 'none' ? 'None' : groupByField}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                {/* Group downbar active */}
+                {isGroupPopoverOpen && (
+                  <div className="absolute left-0 mt-2 w-48 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-50 p-3 flex flex-col gap-2 animate-scale-in">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-1.5">Group By Field</span>
+                    <button 
+                      onClick={() => { setGroupByField('none'); setIsGroupPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      None
+                    </button>
+                    <button 
+                      onClick={() => { setGroupByField('status'); setIsGroupPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Status
+                    </button>
+                    <button 
+                      onClick={() => { setGroupByField('team'); setIsGroupPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Accountable team
+                    </button>
+                    <button 
+                      onClick={() => { setGroupByField('timePeriod'); setIsGroupPopoverOpen(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700 rounded"
+                    >
+                      Time period
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Save View Popover */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsSaveViewPopoverOpen(!isSaveViewPopoverOpen)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded text-xs font-semibold bg-white text-gray-700 hover:border-gray-400"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save view</span>
+                </button>
+
+                {/* Save view downbar active */}
+                {isSaveViewPopoverOpen && (
+                  <div className="absolute left-0 mt-2 w-64 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-50 p-4 flex flex-col gap-3 animate-scale-in text-left text-gray-800">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Save View Settings</span>
+                    <p className="text-[11px] text-gray-500">Save current filters, columns sorting and grouping rules for everyone in this team space.</p>
+                    <div className="flex gap-2 mt-2">
+                      <button 
+                        onClick={() => setIsSaveViewPopoverOpen(false)}
+                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-[11px] font-bold uppercase text-gray-600 text-center hover:bg-[#f3f3f4]"
+                      >
+                        Discard
+                      </button>
+                      <button 
+                        onClick={() => { alert('View settings saved successfully!'); setIsSaveViewPopoverOpen(false); }}
+                        className="flex-1 px-3 py-1.5 bg-black text-white rounded text-[11px] font-bold uppercase text-center hover:bg-neutral-800"
+                      >
+                        Save for all
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Quick Action Button */}
+            <div>
               <button
-                onClick={() => setIsCreatingGoal(!isCreatingGoal)}
+                onClick={() => setIsCreatingGoal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3b66c5] hover:bg-[#2e55aa] text-white rounded text-xs font-bold transition-all shadow-xs"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -344,86 +622,77 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
             </div>
           </div>
 
-          {/* Inline Goal Form Drawer */}
+          {/* Goal form active drawer */}
           {isCreatingGoal && (
-            <form onSubmit={handleCreateGoal} className="bg-slate-50 border border-[#e2e2e2] rounded-lg p-5 space-y-4 animate-scale-in">
-              <h4 className="text-xs font-bold text-[#1a1c1c] uppercase tracking-wider flex items-center gap-2">
+            <form onSubmit={handleCreateGoal} className="bg-slate-50 border border-[#e2e2e2] rounded-lg p-5 space-y-4 animate-scale-in text-gray-800">
+              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                 <Target className="h-4 w-4 text-[#3b66c5]" />
-                <span>Define New Workspace Goal Objective</span>
+                <span>Define Workspace Objective Goal</span>
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                {/* Goal Name */}
                 <div className="md:col-span-2">
-                  <label className="block text-[9px] uppercase font-bold text-[#777777] mb-1">Goal Name *</label>
+                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Goal Name *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Expand design patterns to grayscale theme"
+                    placeholder="e.g. Build collaborative strategy maps"
                     value={newGoalName}
                     onChange={(e) => setNewGoalName(e.target.value)}
-                    className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
+                    className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black"
                   />
                 </div>
 
-                {/* Owner */}
                 <div>
-                  <label className="block text-[9px] uppercase font-bold text-[#777777] mb-1">Owner</label>
+                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Time Period</label>
                   <input
-                    type="email"
-                    value={newGoalOwner}
-                    onChange={(e) => setNewGoalOwner(e.target.value)}
-                    className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
+                    type="text"
+                    value={newGoalTime}
+                    onChange={(e) => setNewGoalTime(e.target.value)}
+                    className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black"
                   />
                 </div>
 
-                {/* Status */}
                 <div>
-                  <label className="block text-[9px] uppercase font-bold text-[#777777] mb-1">Status</label>
-                  <select
-                    value={newGoalStatus}
-                    onChange={(e) => setNewGoalStatus(e.target.value)}
-                    className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
-                  >
-                    <option value="On track">On track</option>
-                    <option value="At risk">At risk</option>
-                    <option value="Off track">Off track</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-
-                {/* Progress */}
-                <div>
-                  <label className="block text-[9px] uppercase font-bold text-[#777777] mb-1">Initial Progress (%)</label>
+                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Initial Progress %</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     value={newGoalProgress}
                     onChange={(e) => setNewGoalProgress(e.target.value)}
-                    className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
+                    className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black font-mono"
                   />
                 </div>
 
-                {/* Time Period */}
                 <div>
-                  <label className="block text-[9px] uppercase font-bold text-[#777777] mb-1">Time Period</label>
-                  <input
-                    type="text"
-                    value={newGoalTime}
-                    onChange={(e) => setNewGoalTime(e.target.value)}
-                    className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
-                  />
+                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Accountable Team</label>
+                  <select
+                    value={newGoalTeam}
+                    onChange={(e) => setNewGoalTeam(e.target.value)}
+                    className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black font-semibold"
+                  >
+                    {seedTeams.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </div>
 
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Goal Owner</label>
+                  <select
+                    value={newGoalOwner}
+                    onChange={(e) => setNewGoalOwner(e.target.value)}
+                    className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black font-semibold"
+                  >
+                    {seedUsers.map(u => <option key={u.email} value={u.email}>{u.name}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-[#eeeeee]">
                 <button
                   type="button"
                   onClick={() => setIsCreatingGoal(false)}
-                  className="px-3 py-1.5 border border-[#c6c6c6] text-xs font-semibold rounded hover:bg-[#f3f3f4] text-[#5e5e5e]"
+                  className="px-3 py-1.5 border border-gray-300 text-xs font-semibold rounded hover:bg-[#f3f3f4] text-gray-600"
                 >
                   Cancel
                 </button>
@@ -437,352 +706,638 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
             </form>
           )}
 
-          {/* 3. High-Contrast Interactive Sheet/Table */}
-          <div className="border border-[#e2e2e2] rounded-lg bg-white overflow-hidden shadow-xs relative">
+          {/* Table Container Sheet */}
+          <div className="border border-[#e2e2e2] rounded-lg bg-white overflow-hidden shadow-xs relative text-gray-800">
             <div className="overflow-x-auto min-h-[300px]">
-              <table className="w-full text-left border-collapse text-xs select-none">
-                <thead>
-                  <tr className="border-b border-[#e2e2e2] bg-[#fafafb] text-[#5e5e5e] font-semibold h-11">
-                    
-                    {/* Render headers dynamically */}
-                    {columns.map((col, cIdx) => (
-                      <th key={col.id} className={`py-2 px-4 relative group cursor-pointer ${col.width}`}>
-                        <div 
-                          onClick={() => {
-                            if (col.id === 'progress' || col.id === 'status' || col.id === 'name' || col.id === 'timePeriod' || col.id === 'owner' || col.id === 'team') {
-                              if (sortField === col.id) {
-                                setSortAsc(!sortAsc);
-                              } else {
-                                setSortField(col.id);
-                                setSortAsc(true);
-                              }
-                            }
-                          }}
-                          className="flex items-center gap-1.5 hover:text-black transition-colors select-none"
-                        >
-                          <span>{col.label}</span>
-                          <ArrowUpDown className="h-3 w-3 opacity-60 flex-shrink-0" />
-                        </div>
+              
+              {/* Loop grouped goals */}
+              {Object.entries(groupedGoals).map(([groupName, groupList]) => (
+                <div key={groupName} className="border-b border-[#e2e2e2] last:border-b-0">
+                  
+                  {/* Group collapsible accordion header */}
+                  {groupByField !== 'none' && (
+                    <div className="bg-slate-50 px-4 py-2 text-xs font-bold text-gray-600 border-b border-[#e2e2e2] uppercase tracking-wider flex items-center gap-2">
+                      <ChevronRight className="h-4.5 w-4.5 text-gray-400 rotate-90" />
+                      <span>{groupByField}: {groupName} ({groupList.length} objectives)</span>
+                    </div>
+                  )}
 
-                        {/* Dropdown Button on hover/active */}
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveHeaderDropdown(activeHeaderDropdown === col.id ? null : col.id);
-                          }}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-[#eeeeef] rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <ChevronDown className="h-3.5 w-3.5" />
-                        </button>
-
-                        {/* Floating Column Menu (Sort/Move Options) */}
-                        {activeHeaderDropdown === col.id && (
-                          <div 
-                            ref={headerMenuRef}
-                            className="absolute left-2 mt-2 w-48 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col text-[#1a1c1c] font-normal animate-scale-in"
-                          >
-                            <div className="px-3.5 py-1 text-[9px] uppercase font-bold text-gray-400 tracking-wider">Column Options</div>
-                            
-                            <button
+                  <table className="w-full text-left border-collapse text-xs select-none table-fixed">
+                    <thead>
+                      <tr className="border-b border-[#e2e2e2] bg-[#fafafb] text-[#5e5e5e] font-semibold h-11">
+                        
+                        {/* Headers loop */}
+                        {columns.map((col, cIdx) => (
+                          <th key={col.id} className={`py-2 px-4 relative group cursor-pointer ${col.width}`}>
+                            <div 
                               onClick={() => {
-                                setSortField(col.id);
-                                setSortAsc(true);
-                                setActiveHeaderDropdown(null);
+                                if (sortField === col.id) {
+                                  setSortAsc(!sortAsc);
+                                } else {
+                                  setSortField(col.id);
+                                  setSortAsc(true);
+                                }
                               }}
-                              className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] flex items-center gap-2"
+                              className="flex items-center gap-1.5 hover:text-black transition-colors select-none text-gray-700"
                             >
-                              <span>Sort A - Z</span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setSortField(col.id);
-                                setSortAsc(false);
-                                setActiveHeaderDropdown(null);
-                              }}
-                              className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] flex items-center gap-2"
-                            >
-                              <span>Sort Z - A</span>
-                            </button>
-
-                            <div className="border-t border-[#eeeeee] my-1"></div>
-                            
-                            {/* Move Column Left */}
-                            {cIdx > 0 && (
-                              <button
-                                onClick={() => handleMoveColumn(col.id, 'left')}
-                                className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] flex items-center gap-2"
-                              >
-                                <ArrowLeft className="h-3 w-3 text-[#777777]" />
-                                <span>Move Column Left</span>
-                              </button>
-                            )}
-
-                            {/* Move Column Right */}
-                            {cIdx < columns.length - 1 && (
-                              <button
-                                onClick={() => handleMoveColumn(col.id, 'right')}
-                                className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] flex items-center gap-2"
-                              >
-                                <ArrowRight className="h-3 w-3 text-[#777777]" />
-                                <span>Move Column Right</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </th>
-                    ))}
-
-                    {/* Add Field Column Trigger */}
-                    <th className="py-2 px-4 w-12 text-center relative" ref={addFieldRef}>
-                      <button 
-                        onClick={() => {
-                          setIsAddFieldOpen(!isAddFieldOpen);
-                          setNewFieldPopoverStep('define');
-                        }}
-                        className="p-1 hover:bg-[#eeeeef] rounded transition-colors text-black border border-gray-300"
-                        title="Add custom metadata field (+)"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-
-                      {/* Add Field popover dialogs (Matches picture filenames) */}
-                      {isAddFieldOpen && newFieldPopoverStep === 'define' && (
-                        <div className="absolute right-0 mt-2 w-64 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 p-4 flex flex-col gap-3 font-normal text-left text-[#1a1c1c] animate-scale-in">
-                          <h5 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Field Type Downbar Options</h5>
-                          
-                          <form onSubmit={handleCreateCustomField} className="space-y-3.5">
-                            <div>
-                              <label className="block text-[9px] font-bold uppercase tracking-wider text-[#777777] mb-1">Field Name</label>
-                              <input 
-                                type="text"
-                                required
-                                value={newFieldName}
-                                onChange={(e) => setNewFieldName(e.target.value)}
-                                placeholder="e.g. Priority Level"
-                                className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
-                              />
+                              <span>{col.label}</span>
+                              <ArrowUpDown className="h-3 w-3 opacity-60 flex-shrink-0" />
                             </div>
 
-                            <div>
-                              <label className="block text-[9px] font-bold uppercase tracking-wider text-[#777777] mb-1">Field Type Selection</label>
-                              <select
-                                value={newFieldType}
-                                onChange={(e) => setNewFieldType(e.target.value)}
-                                className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
-                              >
-                                <option value="text">Text Select</option>
-                                <option value="number">Number Select</option>
-                                <option value="date">Date Select</option>
-                                <option value="people">People Select</option>
-                                <option value="select">Single Select</option>
-                                <option value="multiselect">Multi-select</option>
-                              </select>
-                            </div>
+                            {/* Options popup anchor trigger */}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveHeaderDropdown(activeHeaderDropdown === col.id ? null : col.id);
+                              }}
+                              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-[#eeeeef] rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+                            </button>
 
-                            {/* Show option creator popped after selecting single/multi select */}
-                            {['select', 'multiselect'].includes(newFieldType) && (
-                              <div>
-                                <label className="block text-[9px] font-bold uppercase tracking-wider text-[#777777] mb-1">Dropbar Options (Comma separated)</label>
-                                <input 
-                                  type="text"
-                                  placeholder="e.g. Critical, Major, Normal"
-                                  value={newFieldOptions}
-                                  onChange={(e) => setNewFieldOptions(e.target.value)}
-                                  className="w-full text-xs p-2 border border-[#c6c6c6] bg-white rounded outline-none focus:border-[#3b66c5]"
-                                />
+                            {/* Dropdown Options popovers (Moves columns showing too) */}
+                            {activeHeaderDropdown === col.id && (
+                              <div 
+                                ref={headerMenuRef}
+                                className="absolute left-2 mt-2 w-48 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col text-gray-800 font-normal animate-scale-in"
+                              >
+                                <div className="px-3.5 py-1 text-[9px] uppercase font-bold text-gray-400 tracking-wider">Column options</div>
+                                
+                                <button
+                                  onClick={() => {
+                                    setSortField(col.id);
+                                    setSortAsc(true);
+                                    setActiveHeaderDropdown(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700"
+                                >
+                                  Sort A - Z
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setSortField(col.id);
+                                    setSortAsc(false);
+                                    setActiveHeaderDropdown(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-700"
+                                >
+                                  Sort Z - A
+                                </button>
+
+                                <div className="border-t border-[#eeeeee] my-1"></div>
+
+                                {/* Move Left */}
+                                {cIdx > 0 && (
+                                  <button
+                                    onClick={() => handleMoveColumn(col.id, 'left')}
+                                    className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] flex items-center gap-2 font-semibold text-gray-700"
+                                  >
+                                    <ArrowLeft className="h-3 w-3 text-gray-400" />
+                                    <span>Move Column Left</span>
+                                  </button>
+                                )}
+
+                                {/* Move Right */}
+                                {cIdx < columns.length - 1 && (
+                                  <button
+                                    onClick={() => handleMoveColumn(col.id, 'right')}
+                                    className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-[#f5f5f6] flex items-center gap-2 font-semibold text-gray-700"
+                                  >
+                                    <ArrowRight className="h-3 w-3 text-gray-400" />
+                                    <span>Move Column Right</span>
+                                  </button>
+                                )}
+
+                                {col.isCustom && (
+                                  <>
+                                    <div className="border-t border-[#eeeeee] my-1"></div>
+                                    <button
+                                      onClick={() => {
+                                        setColumns(columns.filter(c => c.id !== col.id));
+                                        setActiveHeaderDropdown(null);
+                                      }}
+                                      className="w-full text-left px-3.5 py-1.5 text-xs hover:bg-rose-50 text-rose-600 flex items-center gap-2 font-semibold"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                      <span>Delete custom column</span>
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             )}
+                          </th>
+                        ))}
 
-                            <div className="flex justify-end gap-2 pt-2 border-t border-[#eeeeee]">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsAddFieldOpen(false);
-                                  setNewFieldPopoverStep(null);
-                                }}
-                                className="px-2.5 py-1 border border-[#c6c6c6] text-[10px] font-bold uppercase tracking-wider rounded text-[#777777] hover:bg-[#f3f3f4]"
-                              >
-                                Close
-                              </button>
-                              <button
-                                type="submit"
-                                className="px-3 py-1 bg-black text-white hover:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider rounded shadow-xs"
-                              >
-                                Enter to sheet
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                    </th>
+                        {/* Add Field Trigger column header */}
+                        <th className="py-2 px-4 w-14 text-center relative" ref={addFieldRef}>
+                          <button 
+                            onClick={() => setIsAddFieldOpen(!isAddFieldOpen)}
+                            className="p-1 hover:bg-[#eeeeef] rounded transition-colors text-black border border-gray-300"
+                            title="Add Field option active"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
 
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {displayGoals.length === 0 ? (
-                    <tr>
-                      <td colSpan={columns.length + 1} className="py-16 text-center text-[#777777] italic bg-white">
-                        No goals mapped to this view. Get started by clicking "Create Goal".
-                      </td>
-                    </tr>
-                  ) : (
-                    displayGoals.map((goal) => (
-                      <tr 
-                        key={goal._id} 
-                        className="border-b border-[#e2e2e2] last:border-b-0 hover:bg-[#fafafb]/50 transition-colors"
-                      >
-                        
-                        {/* Render cells in order of active columns */}
-                        {columns.map((col) => {
-                          if (col.id === 'name') {
-                            return (
-                              <td key={col.id} className="py-3 px-4 font-bold text-[#1a1c1c]">
-                                <input 
-                                  type="text"
-                                  value={goal.name}
-                                  onChange={(e) => handleUpdateGoalField(goal._id, 'name', e.target.value)}
-                                  className="w-full bg-transparent hover:bg-gray-50 border-none outline-none py-0.5 px-1 focus:bg-white rounded transition-colors text-[#1a1c1c]"
-                                />
-                              </td>
-                            );
-                          }
-
-                          if (col.id === 'status') {
-                            return (
-                              <td key={col.id} className="py-3 px-4">
-                                <select 
-                                  value={goal.status}
-                                  onChange={(e) => handleUpdateGoalField(goal._id, 'status', e.target.value)}
-                                  className={`border rounded-full px-3 py-0.5 text-[10px] font-semibold font-sans outline-none cursor-pointer ${getStatusBadgeClass(goal.status)}`}
-                                >
-                                  <option value="On track">On track</option>
-                                  <option value="At risk">At risk</option>
-                                  <option value="Off track">Off track</option>
-                                  <option value="Completed">Completed</option>
-                                </select>
-                              </td>
-                            );
-                          }
-
-                          if (col.id === 'progress') {
-                            return (
-                              <td key={col.id} className="py-3 px-4">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-full bg-[#f3f3f4] h-2 rounded-full overflow-hidden border border-[#eeeeee]">
-                                    <div 
-                                      className={`h-full transition-all duration-500 ${
-                                        goal.status === 'On track' ? 'bg-emerald-500' :
-                                        goal.status === 'At risk' ? 'bg-amber-500' :
-                                        goal.status === 'Completed' ? 'bg-blue-500' :
-                                        'bg-rose-500'
-                                      }`}
-                                      style={{ width: `${goal.progress}%` }}
-                                    ></div>
-                                  </div>
-                                  <input 
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    value={goal.progress}
-                                    onChange={(e) => handleUpdateGoalField(goal._id, 'progress', e.target.value)}
-                                    className="w-12 bg-transparent hover:bg-gray-50 text-right font-mono border-none outline-none focus:bg-white p-0.5 rounded"
-                                  />
-                                  <span className="text-[10px] font-mono text-[#777777]">%</span>
-                                </div>
-                              </td>
-                            );
-                          }
-
-                          if (col.id === 'timePeriod') {
-                            return (
-                              <td key={col.id} className="py-3 px-4 font-semibold text-[#5e5e5e]">
-                                <input 
-                                  type="text"
-                                  value={goal.timePeriod}
-                                  onChange={(e) => handleUpdateGoalField(goal._id, 'timePeriod', e.target.value)}
-                                  className="w-full bg-transparent hover:bg-gray-50 border-none outline-none py-0.5 px-1 focus:bg-white rounded transition-colors text-[#5e5e5e]"
-                                />
-                              </td>
-                            );
-                          }
-
-                          if (col.id === 'owner') {
-                            return (
-                              <td key={col.id} className="py-3 px-4 font-medium text-[#1a1c1c]">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-5 w-5 bg-pink-100 text-pink-700 font-bold rounded-full flex items-center justify-center text-[9px] shadow-xs select-none uppercase">
-                                    {goal.owner.charAt(0)}
-                                  </div>
+                          {/* Field Types Downbar active popup (Single/Multi option builder) */}
+                          {isAddFieldOpen && (
+                            <div className="absolute right-0 mt-2 w-72 bg-white border border-[#e2e2e2] rounded-xl shadow-2xl z-50 p-4 flex flex-col gap-3 font-normal text-left text-gray-800 animate-scale-in">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Field type downbar options</span>
+                              
+                              <form onSubmit={handleCreateCustomField} className="space-y-3">
+                                <div>
+                                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Field name</label>
                                   <input 
                                     type="text"
-                                    value={goal.owner.split('@')[0]}
-                                    onChange={(e) => handleUpdateGoalField(goal._id, 'owner', e.target.value + '@crewflow.com')}
-                                    className="bg-transparent hover:bg-gray-50 border-none outline-none py-0.5 px-1 focus:bg-white rounded transition-colors w-24 text-[#1a1c1c] truncate"
+                                    required
+                                    value={newFieldName}
+                                    onChange={(e) => setNewFieldName(e.target.value)}
+                                    placeholder="e.g. Priority Level"
+                                    className="w-full text-xs p-2 border border-gray-300 rounded outline-none focus:border-[#3b66c5] text-black"
                                   />
                                 </div>
-                              </td>
-                            );
-                          }
 
-                          if (col.id === 'team') {
-                            return (
-                              <td key={col.id} className="py-3 px-4 font-semibold text-[#5e5e5e]">
-                                <select
-                                  value={goal.team}
-                                  onChange={(e) => handleUpdateGoalField(goal._id, 'team', e.target.value)}
-                                  className="bg-transparent hover:bg-gray-50 border-none outline-none py-0.5 px-1 focus:bg-white rounded cursor-pointer text-[#5e5e5e]"
-                                >
-                                  <option value="Engineering">Engineering</option>
-                                  <option value="Marketing">Marketing</option>
-                                  <option value="Design">Design</option>
-                                  <option value="Product">Product</option>
-                                  <option value="Partnerships">Partnerships</option>
-                                </select>
-                              </td>
-                            );
-                          }
+                                <div>
+                                  <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Field type</label>
+                                  <select
+                                    value={newFieldType}
+                                    onChange={(e) => setNewFieldType(e.target.value)}
+                                    className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black font-semibold"
+                                  >
+                                    <option value="text">Text select</option>
+                                    <option value="number">Number select</option>
+                                    <option value="date">Date select</option>
+                                    <option value="people">People select</option>
+                                    <option value="select">Single select</option>
+                                    <option value="multiselect">Multi-select</option>
+                                  </select>
+                                </div>
 
-                          // Render custom fields
-                          return (
-                            <td key={col.id} className="py-3 px-4">
-                              <input 
-                                type={col.fieldType === 'number' ? 'number' : 'text'}
-                                value={goal[col.id] !== undefined ? goal[col.id] : ''}
-                                onChange={(e) => handleUpdateGoalField(goal._id, col.id, e.target.value)}
-                                className="w-full bg-transparent hover:bg-gray-50 border-none outline-none py-0.5 px-1 focus:bg-white rounded text-[#1a1c1c]"
-                                placeholder="Enter value..."
-                              />
-                            </td>
-                          );
-                        })}
+                                {/* Custom Options Builder popped after selecting single/multi select */}
+                                {['select', 'multiselect'].includes(newFieldType) && (
+                                  <div className="space-y-2 p-2.5 bg-[#fafafb] border border-gray-200 rounded-lg">
+                                    <label className="block text-[9px] uppercase font-bold text-gray-500">Configure select options</label>
+                                    
+                                    <div className="flex gap-1.5">
+                                      <input 
+                                        type="text"
+                                        placeholder="Add tag name..."
+                                        value={currentOptionText}
+                                        onChange={(e) => setCurrentOptionText(e.target.value)}
+                                        className="flex-1 text-[11px] p-1.5 border border-gray-300 bg-white rounded outline-none text-black"
+                                      />
+                                      <button 
+                                        type="button"
+                                        onClick={handleAddCustomOption}
+                                        className="px-2 py-1.5 bg-black hover:bg-neutral-800 text-white rounded text-[10px] font-bold"
+                                      >
+                                        + Add
+                                      </button>
+                                    </div>
 
-                        {/* Blank cell to align with Add Field header button */}
-                        <td className="py-3 px-4"></td>
+                                    {customOptionsList.length > 0 && (
+                                      <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-[#eeeeee] mt-1.5">
+                                        {customOptionsList.map((opt, idx) => (
+                                          <span 
+                                            key={idx}
+                                            className={`text-[9px] font-bold px-2 py-0.5 border rounded-full ${opt.color}`}
+                                          >
+                                            {opt.label}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
 
+                                {/* Number format popup details */}
+                                {newFieldType === 'number' && (
+                                  <div className="space-y-1">
+                                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Number select formatting</label>
+                                    <select
+                                      value={newFieldNumberFormat}
+                                      onChange={(e) => setNewFieldNumberFormat(e.target.value)}
+                                      className="w-full text-xs p-1.5 border border-gray-300 bg-white rounded outline-none focus:border-[#3b66c5] text-black font-semibold"
+                                    >
+                                      <option value="integer">Integer (e.g. 12)</option>
+                                      <option value="decimal">Decimal (e.g. 12.34)</option>
+                                      <option value="currency">Currency (e.g. $12.00)</option>
+                                      <option value="percent">Percentage (e.g. 12%)</option>
+                                    </select>
+                                  </div>
+                                )}
+
+                                <div className="flex justify-end gap-2 pt-2 border-t border-[#eeeeee]">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsAddFieldOpen(false)}
+                                    className="px-2.5 py-1.5 border border-gray-300 text-[10px] font-bold uppercase rounded text-gray-600 hover:bg-[#f3f3f4]"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="px-3.5 py-1.5 bg-[#3b66c5] hover:bg-[#2e55aa] text-white text-[10px] font-bold uppercase rounded shadow-xs"
+                                  >
+                                    Enter to sheet
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          )}
+                        </th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+
+                    <tbody ref={inlineEditRef}>
+                      {groupList.map((goal) => (
+                        <tr 
+                          key={goal._id} 
+                          className="border-b border-[#e2e2e2] last:border-b-0 hover:bg-[#fafafb]/50 transition-colors h-11"
+                        >
+                          
+                          {/* Loop through active table columns */}
+                          {columns.map((col) => {
+                            const isCellActive = activeCellEdit?.goalId === goal._id && activeCellEdit?.fieldId === col.id;
+
+                            // 1. Column: Name
+                            if (col.id === 'name') {
+                              return (
+                                <td key={col.id} className="py-2 px-4 font-bold text-gray-900 truncate">
+                                  <input 
+                                    type="text"
+                                    value={goal.name}
+                                    onChange={(e) => handleUpdateGoalField(goal._id, 'name', e.target.value)}
+                                    className="w-full bg-transparent hover:bg-gray-50 border-none outline-none py-1 px-1.5 focus:bg-white rounded transition-colors text-gray-900 font-bold"
+                                  />
+                                </td>
+                              );
+                            }
+
+                            // 2. Column: Status
+                            if (col.id === 'status') {
+                              return (
+                                <td key={col.id} className="py-2 px-4">
+                                  <select 
+                                    value={goal.status}
+                                    onChange={(e) => handleUpdateGoalField(goal._id, 'status', e.target.value)}
+                                    className={`border rounded-full px-3 py-1 text-[10px] font-bold outline-none cursor-pointer ${getStatusBadgeClass(goal.status)}`}
+                                  >
+                                    <option value="On track">On track</option>
+                                    <option value="At risk">At risk</option>
+                                    <option value="Off track">Off track</option>
+                                    <option value="Completed">Completed</option>
+                                  </select>
+                                </td>
+                              );
+                            }
+
+                            // 3. Column: Progress
+                            if (col.id === 'progress') {
+                              return (
+                                <td key={col.id} className="py-2 px-4">
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex-1 bg-[#f3f3f4] h-2 rounded-full overflow-hidden border border-[#eeeeee]">
+                                      <div 
+                                        className={`h-full transition-all duration-500 ${
+                                          goal.status === 'On track' ? 'bg-emerald-500' :
+                                          goal.status === 'At risk' ? 'bg-amber-500' :
+                                          goal.status === 'Completed' ? 'bg-blue-500' :
+                                          'bg-rose-500'
+                                        }`}
+                                        style={{ width: `${goal.progress}%` }}
+                                      ></div>
+                                    </div>
+                                    <input 
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      value={goal.progress}
+                                      onChange={(e) => handleUpdateGoalField(goal._id, 'progress', e.target.value)}
+                                      className="w-10 bg-transparent hover:bg-gray-50 text-right font-mono font-semibold border-none outline-none focus:bg-white p-0.5 rounded text-gray-800"
+                                    />
+                                    <span className="text-[10px] font-mono text-gray-400">%</span>
+                                  </div>
+                                </td>
+                              );
+                            }
+
+                            // 4. Column: Time Period
+                            if (col.id === 'timePeriod') {
+                              return (
+                                <td 
+                                  key={col.id} 
+                                  className="py-2 px-4 font-semibold text-gray-600 cursor-pointer relative"
+                                  onClick={() => {
+                                    setActiveCellEdit({ goalId: goal._id, fieldId: col.id });
+                                    setMapDropdownActive(false);
+                                  }}
+                                >
+                                  {isCellActive ? (
+                                    <input 
+                                      type="text"
+                                      autoFocus
+                                      value={goal.timePeriod}
+                                      onChange={(e) => handleUpdateGoalField(goal._id, 'timePeriod', e.target.value)}
+                                      onBlur={() => setActiveCellEdit(null)}
+                                      className="w-full text-xs p-1 border border-[#3b66c5] rounded outline-none text-black bg-white"
+                                    />
+                                  ) : (
+                                    <div className="flex items-center gap-1 hover:bg-[#f3f3f4] px-1 py-0.5 rounded">
+                                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                      <span>{goal.timePeriod}</span>
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            }
+
+                            // 5. Column: Owner list selected
+                            if (col.id === 'owner') {
+                              const currentOwner = seedUsers.find(u => u.email === goal.owner) || seedUsers[0];
+                              return (
+                                <td 
+                                  key={col.id} 
+                                  className="py-2 px-4 font-medium text-gray-800 cursor-pointer relative"
+                                  onClick={() => {
+                                    setActiveCellEdit({ goalId: goal._id, fieldId: col.id });
+                                    setOwnerDropdownActive(true);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2 hover:bg-[#f3f3f4] px-1 py-0.5 rounded">
+                                    <div className={`h-5.5 w-5.5 rounded-full flex items-center justify-center text-[9px] font-bold shadow-xs uppercase ${currentOwner.color}`}>
+                                      {currentOwner.initials}
+                                    </div>
+                                    <span className="truncate">{currentOwner.name}</span>
+                                  </div>
+
+                                  {/* (+) active - owner list selected dropdown */}
+                                  {isCellActive && ownerDropdownActive && (
+                                    <div className="absolute left-4 top-10 mt-1 w-48 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col gap-0.5 animate-scale-in text-left">
+                                      <div className="px-3.5 py-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">Select Owner</div>
+                                      {seedUsers.map((user) => (
+                                        <button
+                                          key={user.email}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateGoalField(goal._id, 'owner', user.email);
+                                            setActiveCellEdit(null);
+                                            setOwnerDropdownActive(false);
+                                          }}
+                                          className="w-full text-left px-3.5 py-2 text-xs hover:bg-[#f5f5f6] flex items-center gap-2 font-semibold text-gray-800"
+                                        >
+                                          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${user.color}`}>
+                                            {user.initials}
+                                          </div>
+                                          <span>{user.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            }
+
+                            // 6. Column: Accountable Team list selected
+                            if (col.id === 'team') {
+                              return (
+                                <td 
+                                  key={col.id} 
+                                  className="py-2 px-4 font-semibold text-gray-600 cursor-pointer relative"
+                                  onClick={() => {
+                                    setActiveCellEdit({ goalId: goal._id, fieldId: col.id });
+                                    setTeamDropdownActive(true);
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between hover:bg-[#f3f3f4] px-1 py-0.5 rounded text-gray-600 font-semibold">
+                                    <span>{goal.team}</span>
+                                    <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                                  </div>
+
+                                  {/* (+) active - team list selected dropdown */}
+                                  {isCellActive && teamDropdownActive && (
+                                    <div className="absolute left-4 top-10 mt-1 w-40 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col animate-scale-in text-left">
+                                      <div className="px-3.5 py-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">Select Team</div>
+                                      {seedTeams.map((t) => (
+                                        <button
+                                          key={t}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateGoalField(goal._id, 'team', t);
+                                            setActiveCellEdit(null);
+                                            setTeamDropdownActive(false);
+                                          }}
+                                          className="w-full text-left px-3.5 py-2 text-xs hover:bg-[#f5f5f6] font-semibold text-gray-800"
+                                        >
+                                          {t}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            }
+
+                            // Render Custom Column Cells
+                            const cellVal = goal[col.id];
+                            
+                            // Date custom field type
+                            if (col.fieldType === 'date') {
+                              return (
+                                <td key={col.id} className="py-2 px-4 relative">
+                                  <input 
+                                    type="date"
+                                    value={cellVal || ''}
+                                    onChange={(e) => handleUpdateGoalField(goal._id, col.id, e.target.value)}
+                                    className="bg-transparent border-none outline-none font-semibold text-gray-700 hover:bg-[#f3f3f4] focus:bg-white rounded p-0.5 cursor-pointer text-xs"
+                                  />
+                                </td>
+                              );
+                            }
+
+                            // People custom field type
+                            if (col.fieldType === 'people') {
+                              const matchUser = seedUsers.find(u => u.email === cellVal) || seedUsers[0];
+                              return (
+                                <td 
+                                  key={col.id} 
+                                  className="py-2 px-4 cursor-pointer relative"
+                                  onClick={() => {
+                                    setActiveCellEdit({ goalId: goal._id, fieldId: col.id });
+                                    setOwnerDropdownActive(true);
+                                  }}
+                                >
+                                  {cellVal ? (
+                                    <div className="flex items-center gap-1.5 hover:bg-[#f3f3f4] px-1 py-0.5 rounded">
+                                      <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${matchUser.color}`}>
+                                        {matchUser.initials}
+                                      </div>
+                                      <span className="truncate">{matchUser.name}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1 text-gray-400 hover:bg-[#f3f3f4] px-1 py-0.5 rounded">
+                                      <UserPlus className="w-3.5 h-3.5" />
+                                      <span>Assign...</span>
+                                    </div>
+                                  )}
+
+                                  {isCellActive && ownerDropdownActive && (
+                                    <div className="absolute left-4 top-10 mt-1 w-48 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col gap-0.5 animate-scale-in text-left">
+                                      <div className="px-3.5 py-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">Select Person</div>
+                                      {seedUsers.map((user) => (
+                                        <button
+                                          key={user.email}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateGoalField(goal._id, col.id, user.email);
+                                            setActiveCellEdit(null);
+                                            setOwnerDropdownActive(false);
+                                          }}
+                                          className="w-full text-left px-3.5 py-2 text-xs hover:bg-[#f5f5f6] flex items-center gap-2 font-semibold text-gray-800"
+                                        >
+                                          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold uppercase ${user.color}`}>
+                                            {user.initials}
+                                          </div>
+                                          <span>{user.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            }
+
+                            // Single/Multi Select custom field type
+                            if (['select', 'multiselect'].includes(col.fieldType)) {
+                              const option = col.options?.find(o => o.label === cellVal) || { label: cellVal || 'Select...', color: 'bg-gray-100 text-gray-500' };
+                              return (
+                                <td 
+                                  key={col.id} 
+                                  className="py-2 px-4 cursor-pointer relative"
+                                  onClick={() => {
+                                    setActiveCellEdit({ goalId: goal._id, fieldId: col.id });
+                                    setMapDropdownActive(true);
+                                  }}
+                                >
+                                  <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-colors hover:opacity-85 ${option.color}`}>
+                                    {option.label}
+                                  </div>
+
+                                  {isCellActive && mapDropdownActive && (
+                                    <div className="absolute left-4 top-10 mt-1 w-40 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col animate-scale-in text-left">
+                                      <div className="px-3.5 py-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">Select Option</div>
+                                      {col.options?.map((opt) => (
+                                        <button
+                                          key={opt.label}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateGoalField(goal._id, col.id, opt.label);
+                                            setActiveCellEdit(null);
+                                            setMapDropdownActive(false);
+                                          }}
+                                          className="w-full text-left px-3.5 py-2 hover:bg-[#f5f5f6] text-[11px] font-semibold text-gray-800 flex items-center gap-1.5"
+                                        >
+                                          <div className={`h-2.5 w-2.5 rounded-full ${opt.color.split(' ')[0]}`} />
+                                          <span>{opt.label}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            }
+
+                            // Standard Text / Number cell
+                            return (
+                              <td key={col.id} className="py-2 px-4">
+                                <input 
+                                  type={col.fieldType === 'number' ? 'number' : 'text'}
+                                  value={cellVal !== undefined ? cellVal : ''}
+                                  onChange={(e) => handleUpdateGoalField(goal._id, col.id, e.target.value)}
+                                  className="w-full bg-transparent hover:bg-gray-50 border-none outline-none py-1 px-1 focus:bg-white rounded transition-colors text-gray-700 font-semibold"
+                                  placeholder="Double click..."
+                                />
+                              </td>
+                            );
+                          })}
+
+                          {/* Options trigger/delete goal cell */}
+                          <td className="py-2 px-4 w-12 text-center">
+                            <button 
+                              onClick={() => handleDeleteGoal(goal._id)}
+                              className="p-1 text-gray-400 hover:text-rose-600 rounded hover:bg-rose-50"
+                              title="Delete Goal"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+
             </div>
           </div>
 
         </div>
       ) : (
-        /* 4. Strategy Map Visual Hierarchy View */
-        <div className="space-y-8 animate-scale-in">
+        /* 3. High-Fidelity Strategy Map View (Matches Strategy Map references) */
+        <div className="space-y-8 animate-scale-in text-gray-800">
           
-          {/* Company Ultimate Vision banner */}
+          {/* Company Vision / Filter Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-slate-50">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold text-gray-500">Filter Strategy period:</span>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsMapPeriodOpen(!isMapPeriodOpen)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded text-xs font-semibold bg-white text-gray-700 hover:border-gray-400"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  <span>Timeframe: {strategyMapPeriod}</span>
+                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                </button>
+
+                {isMapPeriodOpen && (
+                  <div className="absolute left-0 mt-2 w-40 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-50 p-2 flex flex-col gap-1.5 animate-scale-in text-left">
+                    {['All', 'Q2 2026', 'Q3 2026', 'Q4 2026', 'FY 2026'].map((period) => (
+                      <button
+                        key={period}
+                        onClick={() => {
+                          setStrategyMapPeriod(period);
+                          setIsMapPeriodOpen(false);
+                        }}
+                        className={`w-full text-left px-2.5 py-1.5 text-xs hover:bg-[#f5f5f6] rounded font-semibold ${strategyMapPeriod === period ? 'text-[#3b66c5] bg-blue-50/50' : 'text-gray-700'}`}
+                      >
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setIsCreatingFromMap(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-neutral-800 text-white rounded text-xs font-bold transition-all shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Create goal on map</span>
+            </button>
+          </div>
+
+          {/* Vision Statement Header */}
           <div className="relative overflow-hidden p-6 rounded-2xl border border-transparent bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="space-y-1.5 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider">
+            <div className="space-y-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-1.5 text-amber-600 font-bold text-xs uppercase tracking-wider">
                 <Sparkles className="h-4 w-4" />
-                <span>Ultimate Corporate Vision Map</span>
+                <span>Ultimate corporate vision map</span>
               </div>
               <h3 className="text-base font-bold text-black font-sans leading-tight">Become the #1 Collaboration suite for modern agile teams</h3>
-              <p className="text-xs text-[#777777] max-w-xl">Connecting organizational high-level mission goals directly down into actual workspace project blueprints and collaborative milestones.</p>
+              <p className="text-xs text-gray-500 max-w-xl">Connecting organizational high-level mission goals directly down into actual workspace project blueprints.</p>
             </div>
             
             <div className="h-14 w-14 bg-white shadow-md border border-[#e2e2e2] rounded-xl flex items-center justify-center text-amber-500 flex-shrink-0">
@@ -790,92 +1345,179 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
             </div>
           </div>
 
-          {/* Multi-tier Mappings flowchart */}
+          {/* Interactive Flowchart flowchart columns */}
           <div className="space-y-6">
             
-            {/* Tier 1: Parent Objectives */}
+            {/* Tier 1: Company Objectives */}
             <div className="space-y-3">
-              <h4 className="text-[10px] uppercase font-bold text-[#8a8b8c] tracking-wider px-2">Tier 1: Parent Company Objectives</h4>
+              <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider px-2">Tier 1: Parent company objectives</h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {goals.slice(0, 2).map((goal) => (
-                  <div key={goal._id} className="border border-[#e2e2e2] bg-white rounded-xl p-5 shadow-xs flex flex-col gap-4 relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#3b66c5]" />
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <span className={`text-[9px] font-bold border rounded-full px-2 py-0.5 uppercase tracking-wide ${getStatusBadgeClass(goal.status)}`}>
-                          {goal.status}
-                        </span>
-                        <h5 className="text-xs font-bold text-black mt-2 leading-tight group-hover:underline cursor-pointer">{goal.name}</h5>
+                {goals
+                  .filter(g => strategyMapPeriod === 'All' || g.timePeriod === strategyMapPeriod)
+                  .slice(0, 2).map((goal) => (
+                    <div key={goal._id} className="border border-gray-200 bg-white rounded-xl p-5 shadow-xs flex flex-col gap-4 relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 w-1.5 h-full bg-[#3b66c5]" />
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <span className={`text-[9px] font-bold border rounded-full px-2 py-0.5 uppercase tracking-wide ${getStatusBadgeClass(goal.status)}`}>
+                            {goal.status}
+                          </span>
+                          <h5 className="text-xs font-bold text-black mt-2 leading-tight group-hover:underline cursor-pointer">{goal.name}</h5>
+                        </div>
+                        
+                        <div className="h-8 w-8 rounded bg-[#fafafa] border border-gray-200 flex items-center justify-center text-xs font-bold font-mono text-gray-800">
+                          {goal.progress}%
+                        </div>
                       </div>
-                      
-                      <div className="h-8 w-8 rounded bg-[#fafafa] border border-[#e2e2e2] flex items-center justify-center text-xs font-bold font-mono">
-                        {goal.progress}%
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-[#777777] pt-2 border-t border-[#eeeeee]">
-                      <span className="font-semibold text-gray-500">Target: {goal.timePeriod}</span>
-                      <span className="font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{goal.team} Team</span>
+                      <div className="flex items-center justify-between text-[10px] text-gray-500 pt-2 border-t border-[#eeeeee]">
+                        <span className="font-semibold text-gray-500">Target: {goal.timePeriod}</span>
+                        <span className="font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{goal.team} Team</span>
+                      </div>
                     </div>
-                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Tier 2: Individual and Supporting KR Mappings */}
+            {/* Tier 2: Individual supporting Key Results */}
             <div className="space-y-3">
-              <h4 className="text-[10px] uppercase font-bold text-[#8a8b8c] tracking-wider px-2">Tier 2: Supporting Key Results & Mapped Projects</h4>
+              <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider px-2">Tier 2: Supporting Key Results & Mapped Projects</h4>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {goals.slice(2).map((goal) => {
-                  // Connect goal to a mock project
-                  const index = goals.indexOf(goal);
-                  const connectedProj = projects[index % projects.length] || { name: 'Monochrome Overhaul', _id: 'mock_project_2' };
-                  
-                  return (
-                    <div key={goal._id} className="border border-[#e2e2e2] bg-[#fafafb]/50 hover:bg-white rounded-xl p-4 shadow-xs flex flex-col gap-4 transition-all hover:shadow-md relative overflow-hidden group border-dashed hover:border-solid">
-                      <div className="absolute top-0 left-0 w-1.5 h-full bg-[#9969c9]" />
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className={`text-[8px] font-bold border rounded-full px-2 py-0.5 uppercase tracking-wider ${getStatusBadgeClass(goal.status)}`}>
-                            {goal.status}
-                          </span>
-                          <span className="text-[10px] font-mono font-bold text-[#777777]">{goal.progress}%</span>
-                        </div>
-                        <h5 className="text-xs font-bold text-black leading-snug">{goal.name}</h5>
-                      </div>
-
-                      {/* Connection Project Card links back to active workspace projects */}
-                      <div className="mt-2 p-2.5 bg-white border border-[#e2e2e2] rounded-lg flex flex-col gap-1 hover:border-[#1a1c1c] transition-all">
-                        <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#9969c9] uppercase tracking-wider">
-                          <Link2 className="h-3 w-3" />
-                          <span>Connected Workspace Project</span>
-                        </div>
+                {goals
+                  .filter(g => strategyMapPeriod === 'All' || g.timePeriod === strategyMapPeriod)
+                  .slice(2).map((goal, idx) => {
+                    const connectedProj = projects[idx % projects.length] || { name: 'Monochrome Overhaul', _id: 'mock_project_2' };
+                    
+                    return (
+                      <div key={goal._id} className="border border-gray-200 bg-[#fafafb]/50 hover:bg-white rounded-xl p-4 shadow-xs flex flex-col gap-4 transition-all hover:shadow-md relative overflow-hidden group border-dashed hover:border-solid">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#9969c9]" />
                         
-                        <button 
-                          onClick={() => {
-                            if (setActiveProjectId) setActiveProjectId(connectedProj._id);
-                            if (setActiveView) setActiveView('project-details');
-                          }}
-                          className="text-[11px] font-bold text-black text-left hover:underline truncate"
-                        >
-                          {connectedProj.name}
-                        </button>
-                      </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className={`text-[8px] font-bold border rounded-full px-2 py-0.5 uppercase tracking-wider ${getStatusBadgeClass(goal.status)}`}>
+                              {goal.status}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-gray-800">{goal.progress}%</span>
+                          </div>
+                          <h5 className="text-xs font-bold text-black leading-snug">{goal.name}</h5>
+                        </div>
 
-                      <div className="flex items-center justify-between text-[9px] text-[#777777] border-t border-[#eeeeee]/60 pt-2.5">
-                        <span className="font-semibold">Target: {goal.timePeriod}</span>
-                        <span className="font-semibold uppercase bg-[#f3f3f4] text-gray-700 px-1.5 py-0.5 rounded tracking-wide">{goal.team}</span>
+                        {/* Mapped workspace project links */}
+                        <div className="mt-2 p-2.5 bg-white border border-gray-200 rounded-lg flex flex-col gap-1 hover:border-[#1a1c1c] transition-all">
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#9969c9] uppercase tracking-wider">
+                            <Link2 className="h-3 w-3" />
+                            <span>Connected workspace project</span>
+                          </div>
+                          
+                          <button 
+                            onClick={() => {
+                              if (setActiveProjectId) setActiveProjectId(connectedProj._id);
+                              if (setActiveView) setActiveView('project-details');
+                            }}
+                            className="text-[11px] font-bold text-black text-left hover:underline truncate"
+                          >
+                            {connectedProj.name}
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[9px] text-gray-500 border-t border-[#eeeeee]/60 pt-2.5">
+                          <span className="font-semibold">Target: {goal.timePeriod}</span>
+                          <span className="font-semibold uppercase bg-[#f3f3f4] text-gray-700 px-1.5 py-0.5 rounded tracking-wide">{goal.team}</span>
+                        </div>
                       </div>
-                    </div>
-                  );
+                    );
                 })}
               </div>
             </div>
 
           </div>
+
+          {/* Create Goal from Map Modal Popup */}
+          {isCreatingFromMap && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-6 z-50 animate-fade-in select-none">
+              <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-2xl w-full max-w-md p-6 relative flex flex-col gap-4 text-gray-800">
+                <button 
+                  onClick={() => setIsCreatingFromMap(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-black p-1 hover:bg-[#f3f3f4] rounded"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+
+                <h3 className="text-base font-bold text-black flex items-center gap-2">
+                  <Plus className="h-4.5 w-4.5 text-[#3b66c5]" />
+                  <span>Create Strategy Goal objective on Map</span>
+                </h3>
+
+                <form onSubmit={handleCreateGoal} className="space-y-4">
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Objective Title</label>
+                    <input 
+                      type="text"
+                      required
+                      value={newGoalName}
+                      onChange={(e) => setNewGoalName(e.target.value)}
+                      placeholder="e.g. Scaling B2B Corporate partnerships program"
+                      className="w-full text-xs p-2 border border-gray-300 rounded outline-none focus:border-[#3b66c5] text-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Time period timeframe</label>
+                    <select
+                      value={newGoalTime}
+                      onChange={(e) => setNewGoalTime(e.target.value)}
+                      className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none text-black font-semibold"
+                    >
+                      <option value="Q2 2026">Q2 2026</option>
+                      <option value="Q3 2026">Q3 2026</option>
+                      <option value="Q4 2026">Q4 2026</option>
+                      <option value="FY 2026">FY 2026</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Accountable Team</label>
+                    <select
+                      value={newGoalTeam}
+                      onChange={(e) => setNewGoalTeam(e.target.value)}
+                      className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none text-black font-semibold"
+                    >
+                      {seedTeams.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Align with parent Vision</label>
+                    <select
+                      value={newGoalParent}
+                      onChange={(e) => setNewGoalParent(e.target.value)}
+                      className="w-full text-xs p-2 border border-gray-300 bg-white rounded outline-none text-black font-semibold"
+                    >
+                      {seedParents.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-3 border-t border-[#eeeeee]">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingFromMap(false)}
+                      className="px-3 py-1.5 border border-gray-300 text-xs font-semibold rounded text-gray-500 hover:bg-[#f3f3f4]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 bg-[#3b66c5] hover:bg-[#2e55aa] text-white text-xs font-bold rounded shadow-xs"
+                    >
+                      Define Objective
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
