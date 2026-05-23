@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Layers, User as UserIcon } from 'lucide-react';
+import { LogOut, Layers } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -27,8 +27,15 @@ const Navbar = () => {
         {/* User Info & Actions */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 rounded-xl bg-slate-900/60 px-4 py-2 border border-slate-800">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-slate-300">
-              <UserIcon className="h-4 w-4" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-slate-300 overflow-hidden">
+              <img 
+                src="/logo.png" 
+                alt="User Logo" 
+                className="h-5 w-auto object-contain invert mix-blend-screen opacity-95"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
             </div>
             <div className="hidden sm:block text-left">
               <p className="text-xs font-medium text-slate-300">{user.email}</p>
