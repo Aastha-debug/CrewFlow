@@ -19,7 +19,9 @@ import {
   Settings,
   UserPlus,
   Sliders,
-  ClipboardList
+  ClipboardList,
+  Target,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -52,14 +54,7 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
       {/* 1. Primary Slim Sidebar */}
       <aside className="w-[72px] bg-[#222325] border-r border-[#2d2e30] flex flex-col items-center py-4 gap-6">
         
-        {/* Menu Icon */}
-        <button 
-          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-          className="text-[#a5a6a7] hover:text-white transition-colors mb-2"
-          title="Toggle Sidebar"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
+
 
         {/* Modules List */}
         <div className="flex flex-col gap-4 w-full px-2">
@@ -72,6 +67,13 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
                 onClick={() => {
                   setActiveModule(mod.id);
                   setIsSidebarExpanded(true); // Auto-expand when module clicked
+                  if (mod.id === 'strategy') {
+                    setActiveView('goals');
+                    setActiveProjectId(null);
+                  } else if (mod.id === 'work') {
+                    setActiveView('home');
+                    setActiveProjectId(null);
+                  }
                 }}
                 className="flex flex-col items-center gap-1.5 w-full group"
               >
@@ -301,6 +303,127 @@ const Sidebar = ({ activeModule, setActiveModule, activeView, setActiveView, pro
                       )}
                     </div>
                   )}
+                </div>
+              </>
+            ) : activeModule === 'strategy' ? (
+              <>
+                <nav className="space-y-0.5">
+                  {/* Goals */}
+                  <button
+                    onClick={() => {
+                      setActiveView('goals');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'goals' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Target className={`h-4 w-4 ${activeView === 'goals' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Goals</span>
+                  </button>
+
+                  {/* Reporting */}
+                  <button
+                    onClick={() => {
+                      setActiveView('reporting');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'reporting' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Activity className={`h-4 w-4 ${activeView === 'reporting' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Reporting</span>
+                  </button>
+
+                  {/* Resourcing */}
+                  <button
+                    onClick={() => {
+                      setActiveView('resourcing');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'resourcing' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Users className={`h-4 w-4 ${activeView === 'resourcing' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Resourcing</span>
+                  </button>
+                </nav>
+
+                {/* Recent Section */}
+                <div className="mt-4 pt-4 border-t border-[#2d2e30]/50 space-y-1">
+                  <div className="flex items-center justify-between px-3 py-1.5">
+                    <span className="text-[10px] font-semibold text-[#8a8b8c] uppercase tracking-wider">
+                      Recent
+                    </span>
+                    <button 
+                      onClick={() => {
+                        setActiveView('new-dashboard');
+                        setActiveProjectId(null);
+                      }}
+                      className="text-[#8a8b8c] hover:text-white transition-colors"
+                      title="New Dashboard"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    {/* My organization */}
+                    <button
+                      onClick={() => {
+                        setActiveView('my-organization');
+                        setActiveProjectId(null);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        activeView === 'my-organization' 
+                          ? 'bg-[#3b3c3e] text-white' 
+                          : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                      }`}
+                    >
+                      <div className="h-2 w-2 rounded-full bg-pink-500" />
+                      <span className="truncate">My organization</span>
+                    </button>
+
+                    {/* New dashboard */}
+                    <button
+                      onClick={() => {
+                        setActiveView('new-dashboard');
+                        setActiveProjectId(null);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        activeView === 'new-dashboard' 
+                          ? 'bg-[#3b3c3e] text-white' 
+                          : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                      }`}
+                    >
+                      <div className="h-2 w-2 rounded-full bg-purple-500" />
+                      <span className="truncate">New dashboard</span>
+                    </button>
+
+                    {/* My impact */}
+                    <button
+                      onClick={() => {
+                        setActiveView('my-impact');
+                        setActiveProjectId(null);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        activeView === 'my-impact' 
+                          ? 'bg-[#3b3c3e] text-white' 
+                          : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                      }`}
+                    >
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
+                      <span className="truncate">My impact</span>
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (

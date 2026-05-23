@@ -13,6 +13,10 @@ import ProjectModal from './components/ProjectModal';
 import TaskModal from './components/TaskModal';
 import InviteModal from './components/InviteModal';
 import BrowseProjectsView from './components/BrowseProjectsView';
+import StrategyGoalsView from './components/StrategyGoalsView';
+import StrategyReportingView from './components/StrategyReportingView';
+import StrategyResourcingView from './components/StrategyResourcingView';
+import StrategyDashboardView from './components/StrategyDashboardView';
 import { CheckCircle } from 'lucide-react';
 
 function AppContent() {
@@ -24,6 +28,7 @@ function AppContent() {
   const [activeModule, setActiveModule] = useState('work'); // 'work' | 'strategy' | 'workflow' | 'people'
   const [activeView, setActiveView] = useState('home'); // 'home' | 'inbox' | 'my-tasks' | 'portfolios' | 'project-details'
   const [activeProjectId, setActiveProjectId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Core Data States
   const [projects, setProjects] = useState([]);
@@ -195,7 +200,7 @@ function AppContent() {
       );
     }
 
-    if (activeModule !== 'work') {
+    if (activeModule !== 'work' && activeModule !== 'strategy') {
       return (
         <div className="flex-1 flex flex-col items-center justify-center bg-[#f9f9f9] select-none">
           <div className="h-12 w-12 rounded bg-[#e2e2e2] flex items-center justify-center mb-4 text-[#777777]">
@@ -276,6 +281,39 @@ function AppContent() {
             token={token}
           />
         );
+      // Strategy Module Routes
+      case 'goals':
+        return (
+          <StrategyGoalsView 
+            projects={projects}
+            setActiveView={setActiveView}
+            setActiveProjectId={setActiveProjectId}
+          />
+        );
+      case 'reporting':
+        return (
+          <StrategyReportingView 
+            projects={projects}
+            tasks={tasks}
+          />
+        );
+      case 'resourcing':
+        return (
+          <StrategyResourcingView 
+            projects={projects}
+            tasks={tasks}
+          />
+        );
+      case 'my-organization':
+      case 'new-dashboard':
+      case 'my-impact':
+        return (
+          <StrategyDashboardView 
+            dashboardType={activeView}
+            projects={projects}
+            tasks={tasks}
+          />
+        );
       default:
         return (
           <div className="flex-1 flex items-center justify-center text-xs text-[#777777] italic">
@@ -311,18 +349,20 @@ function AppContent() {
     <div className="flex h-screen w-screen overflow-hidden bg-[#f9f9f9]">
       
       {/* Left Charcoal Sidebar Container */}
-      <Sidebar 
-        activeModule={activeModule}
-        setActiveModule={setActiveModule}
-        activeView={activeView} 
-        setActiveView={setActiveView} 
-        projects={projects}
-        activeProjectId={activeProjectId}
-        setActiveProjectId={setActiveProjectId}
-        onLogout={() => setSkippedAuth(false)}
-        onOpenInviteModal={() => setShowInviteModal(true)}
-        onNewProject={() => setShowProjectModal(true)}
-      />
+      {isSidebarOpen && (
+        <Sidebar 
+          activeModule={activeModule}
+          setActiveModule={setActiveModule}
+          activeView={activeView} 
+          setActiveView={setActiveView} 
+          projects={projects}
+          activeProjectId={activeProjectId}
+          setActiveProjectId={setActiveProjectId}
+          onLogout={() => setSkippedAuth(false)}
+          onOpenInviteModal={() => setShowInviteModal(true)}
+          onNewProject={() => setShowProjectModal(true)}
+        />
+      )}
 
       {/* Right Canvas Workspace Column */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
@@ -339,6 +379,7 @@ function AppContent() {
           onNewProject={() => setShowProjectModal(true)}
           onNewTask={() => setShowTaskModal(true)}
           loading={loadingData}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         {/* Dynamic View Canvas Area */}

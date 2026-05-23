@@ -19,7 +19,11 @@ import {
   ArrowUpDown,
   Home,
   Inbox,
-  CheckSquare
+  CheckSquare,
+  MessageSquare,
+  Tag,
+  LayoutTemplate,
+  Menu
 } from 'lucide-react';
 
 const Header = ({ 
@@ -32,7 +36,8 @@ const Header = ({
   onRefresh, 
   onNewProject, 
   onNewTask,
-  loading 
+  loading,
+  onToggleSidebar
 }) => {
   const { user } = useAuth();
   const effectiveUser = user || { email: 'guest@crewflow.com', role: 'Admin', _id: 'guest_id' };
@@ -42,6 +47,7 @@ const Header = ({
   const [searchCategory, setSearchCategory] = useState(null); // 'tasks' | 'projects' | 'people' | 'portfolios' | 'goals' | null
   const [isFocused, setIsFocused] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const dropdownRef = useRef(null);
 
@@ -50,6 +56,7 @@ const Header = ({
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsFocused(false);
+        setIsMoreOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -102,7 +109,10 @@ const Header = ({
       navigation: [],
       projects: [],
       tasks: [],
-      people: []
+      people: [],
+      messages: [],
+      tags: [],
+      templates: []
     };
 
     // 1. Navigation Matcher (only if category is null or matches navigation context)
@@ -147,6 +157,33 @@ const Header = ({
       }));
     }
 
+    // 5. Messages Matcher
+    if (!searchCategory || searchCategory === 'messages') {
+      results.messages = [
+        { id: 'msg_1', title: 'Scope alignment checklist updated', snippet: 'Aaryan added a new milestone definition to your roadmap layout.', sender: 'aaryan@crewflow.com' },
+        { id: 'msg_2', title: 'Grayscale transition audit request', snippet: 'Check the Monochrome Overhaul project dashboard to audit details.', sender: 'member@crewflow.com' }
+      ].filter(m => m.title.toLowerCase().includes(q) || m.snippet.toLowerCase().includes(q));
+    }
+
+    // 6. Tags Matcher
+    if (!searchCategory || searchCategory === 'tags') {
+      results.tags = [
+        { name: 'Launch', color: 'bg-purple-100 text-purple-700 shadow-sm border border-purple-200' },
+        { name: 'Monochrome', color: 'bg-gray-100 text-gray-700 shadow-sm border border-gray-200' },
+        { name: 'High Priority', color: 'bg-red-100 text-red-700 shadow-sm border border-red-200' },
+        { name: 'UI / UX Design', color: 'bg-blue-100 text-blue-700 shadow-sm border border-blue-200' }
+      ].filter(t => t.name.toLowerCase().includes(q));
+    }
+
+    // 7. Templates Matcher
+    if (!searchCategory || searchCategory === 'templates') {
+      results.templates = [
+        { name: 'Cross-functional project plan', desc: 'Jumpstart multi-department alignment plans.' },
+        { name: '1:1 Meeting agenda', desc: 'Conduct structured 1:1 check-ins.' },
+        { name: 'Meeting agenda', desc: 'Draft meeting minutes and action items.' }
+      ].filter(t => t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+    }
+
     return results;
   }, [searchQuery, searchCategory, projects, tasks]);
 
@@ -169,11 +206,20 @@ const Header = ({
   ];
 
   return (
-    <header className="h-14 border-b border-[#e2e2e2] bg-white flex items-center justify-between px-6 select-none flex-shrink-0 relative z-30">
+    <header className="h-14 border-b border-[#2d2e30] bg-[#1e1f21] text-white flex items-center justify-between px-6 select-none flex-shrink-0 relative z-30">
       
-      {/* Active Breadcrumb Path */}
-      <div className="flex items-center gap-2">
-        <h1 className="text-sm font-semibold text-[#1a1c1c] tracking-tight">
+      {/* Sidebar Toggle & Active Breadcrumb Path */}
+      <div className="flex items-center gap-3">
+        {/* Sidebar Toggle Hamburger Button */}
+        <button
+          onClick={onToggleSidebar}
+          className="text-gray-300 hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors mr-1 flex-shrink-0"
+          title="Toggle Sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <h1 className="text-sm font-bold text-white tracking-tight">
           {getViewLabel()}
         </h1>
       </div>
@@ -182,12 +228,12 @@ const Header = ({
       <div className="hidden md:block relative" ref={dropdownRef}>
         
         {/* Search Input Container Box */}
-        <div className={`flex items-center bg-[#f3f3f4] border rounded-full transition-all duration-300 px-3.5 py-1.5 w-80 ${
+        <div className={`flex items-center border rounded-full transition-all duration-300 px-3.5 py-1.5 w-80 ${
           isFocused 
             ? 'w-[520px] bg-white border-[#3b66c5] ring-1 ring-[#3b66c5]' 
-            : 'border-[#e2e2e2] hover:border-[#c6c6c6]'
+            : 'bg-white/10 border-transparent hover:bg-white/15'
         }`}>
-          <Search className="h-4 w-4 text-[#777777] flex-shrink-0 mr-2" />
+          <Search className={`h-4 w-4 flex-shrink-0 mr-2 ${isFocused ? 'text-gray-500' : 'text-gray-300'}`} />
           
           {/* Active Search Category Tag */}
           {searchCategory && (
@@ -211,7 +257,9 @@ const Header = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
             placeholder={searchCategory ? `Search in ${searchCategory}...` : "Search..."}
-            className="w-full text-xs bg-transparent border-none focus:ring-0 outline-none text-[#1a1c1c] p-0"
+            className={`w-full text-xs bg-transparent border-none focus:ring-0 outline-none p-0 ${
+              isFocused ? 'text-[#1a1c1c] placeholder-gray-400' : 'text-white placeholder-gray-300'
+            }`}
           />
           
           {/* Input control actions (Clear / Focus Out) */}
@@ -257,14 +305,62 @@ const Header = ({
                   );
                 })}
 
-                {/* More Action */}
-                <button
-                  onClick={() => triggerToast("Additional filters: Custom Fields, Date Ranges are coming soon!")}
-                  className="flex items-center gap-1.5 px-3 py-1 border border-gray-300 rounded-full text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                  <span>More</span>
-                </button>
+                {/* More Action with Dropdown Popover */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMoreOpen(!isMoreOpen)}
+                    className={`flex items-center gap-1.5 px-3 py-1 border rounded-full text-xs font-semibold transition-all ${
+                      isMoreOpen || ['messages', 'tags', 'templates'].includes(searchCategory)
+                        ? 'bg-black border-black text-white font-bold'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                    <span>More</span>
+                  </button>
+
+                  {isMoreOpen && (
+                    <div className="absolute left-0 mt-1.5 w-40 bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 py-1.5 flex flex-col animate-scale-in text-[#1a1c1c] font-sans">
+                      
+                      {/* Messages Option */}
+                      <button
+                        onClick={() => {
+                          setSearchCategory('messages');
+                          setIsMoreOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-[#f5f5f6] text-left transition-colors font-semibold text-[#1a1c1c]"
+                      >
+                        <MessageSquare className="h-4 w-4 text-[#777777]" />
+                        <span>Messages</span>
+                      </button>
+
+                      {/* Tags Option */}
+                      <button
+                        onClick={() => {
+                          setSearchCategory('tags');
+                          setIsMoreOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-[#f5f5f6] text-left transition-colors font-semibold text-[#1a1c1c]"
+                      >
+                        <Tag className="h-4 w-4 text-[#777777]" />
+                        <span>Tags</span>
+                      </button>
+
+                      {/* Templates Option */}
+                      <button
+                        onClick={() => {
+                          setSearchCategory('templates');
+                          setIsMoreOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-[#f5f5f6] text-left transition-colors font-semibold text-[#1a1c1c]"
+                      >
+                        <LayoutTemplate className="h-4 w-4 text-[#777777]" />
+                        <span>Templates</span>
+                      </button>
+
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -358,11 +454,85 @@ const Header = ({
                   </div>
                 )}
 
+                {/* Message matches */}
+                {searchResults.messages && searchResults.messages.length > 0 && (
+                  <div className="space-y-1.5">
+                    <h3 className="text-[10px] uppercase font-bold text-[#8a8b8c] tracking-wider">Messages</h3>
+                    <div className="space-y-0.5">
+                      {searchResults.messages.map((msg) => (
+                        <button
+                          key={msg.id}
+                          onClick={() => handleNavClick('inbox')}
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs rounded hover:bg-[#f5f5f6] text-left transition-colors font-semibold"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <MessageSquare className="h-4.5 w-4.5 text-[#777777] flex-shrink-0" />
+                            <div className="truncate">
+                              <p className="truncate font-bold leading-tight">{msg.title}</p>
+                              <p className="text-[10px] text-[#777777] truncate font-normal mt-0.5">{msg.snippet}</p>
+                            </div>
+                          </div>
+                          <span className="text-[9px] text-[#777777] italic flex-shrink-0 ml-2">{msg.sender.split('@')[0]}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tag matches */}
+                {searchResults.tags && searchResults.tags.length > 0 && (
+                  <div className="space-y-1.5">
+                    <h3 className="text-[10px] uppercase font-bold text-[#8a8b8c] tracking-wider">Tags</h3>
+                    <div className="flex flex-wrap gap-2 px-3 py-1 bg-white">
+                      {searchResults.tags.map((tag, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSearchQuery(tag.name);
+                            setSearchCategory('tasks');
+                          }}
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-transparent shadow-xs transition-transform hover:scale-105 ${tag.color}`}
+                        >
+                          # {tag.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Template matches */}
+                {searchResults.templates && searchResults.templates.length > 0 && (
+                  <div className="space-y-1.5">
+                    <h3 className="text-[10px] uppercase font-bold text-[#8a8b8c] tracking-wider">Templates</h3>
+                    <div className="space-y-0.5">
+                      {searchResults.templates.map((tpl, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleNavClick('projects')}
+                          className="w-full flex items-center justify-between px-3 py-2 text-xs rounded hover:bg-[#f5f5f6] text-left transition-colors font-semibold"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <LayoutTemplate className="h-4.5 w-4.5 text-[#9969c9] flex-shrink-0" />
+                            <div className="truncate">
+                              <p className="truncate font-bold leading-tight">{tpl.name}</p>
+                              <p className="text-[10px] text-[#777777] truncate font-normal mt-0.5">{tpl.desc}</p>
+                            </div>
+                          </div>
+                          <span className="text-[9px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 font-bold uppercase tracking-wider">Template</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Empty State */}
                 {searchResults.navigation.length === 0 && 
                  searchResults.projects.length === 0 && 
                  searchResults.tasks.length === 0 && 
-                 searchResults.people.length === 0 && (
+                 searchResults.people.length === 0 &&
+                 (!searchResults.messages || searchResults.messages.length === 0) &&
+                 (!searchResults.tags || searchResults.tags.length === 0) &&
+                 (!searchResults.templates || searchResults.templates.length === 0) && (
                   <div className="py-8 text-center text-xs text-[#777777] italic">
                     No results found matching "{searchQuery}"
                   </div>
@@ -478,7 +648,7 @@ const Header = ({
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="p-2 rounded border border-[#c6c6c6] text-[#5e5e5e] hover:text-[#1a1c1c] hover:bg-[#f3f3f4] active:bg-white transition-colors"
+          className="p-2 rounded border border-[#2d2e30] text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors"
           title="Refresh Workspace"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -491,9 +661,9 @@ const Header = ({
             {/* Create Project Button */}
             <button
               onClick={onNewProject}
-              className="btn-white text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold"
+              className="bg-white hover:bg-gray-100 text-black border border-transparent text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold rounded"
             >
-              <FolderPlus className="h-3.5 w-3.5 text-[#5e5e5e]" />
+              <FolderPlus className="h-3.5 w-3.5 text-gray-700" />
               <span className="hidden sm:inline">New Project</span>
             </button>
 
@@ -501,7 +671,7 @@ const Header = ({
             <button
               onClick={onNewTask}
               disabled={projects.length === 0}
-              className="btn-black text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold"
+              className="bg-[#3b66c5] hover:bg-[#2e55aa] text-white border border-transparent text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold rounded shadow-sm transition-colors"
             >
               <Plus className="h-3.5 w-3.5 text-white" />
               <span>New Task</span>
