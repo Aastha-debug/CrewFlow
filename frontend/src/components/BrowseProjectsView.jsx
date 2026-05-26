@@ -861,7 +861,7 @@ const BrowseProjectsView = ({
           {/* Centered Gallery Trigger */}
           <div className="flex justify-center pt-2">
             <button 
-              onClick={() => alert("You're viewing the latest ready-made templates! Click on a card to instantiate and open a project workspace instantly.")}
+              onClick={() => onNewProject('templates')}
               className="text-xs font-bold text-[#1a1c1c] bg-white border border-[#c6c6c6] hover:bg-[#f3f3f4] px-4 py-2 rounded shadow-xs transition-colors"
             >
               View the template gallery

@@ -224,7 +224,7 @@ function AppContent() {
             tasks={tasks}
             onStatusUpdated={handleTaskStatusUpdated}
             onNewTask={() => setShowTaskModal(true)}
-            onNewProject={() => setShowProjectModal(true)}
+            onNewProject={(mode) => setShowProjectModal(mode || true)}
             onOpenInviteModal={() => setShowInviteModal(true)}
             setActiveView={setActiveView}
             setActiveProjectId={setActiveProjectId}
@@ -252,7 +252,7 @@ function AppContent() {
           <BrowseProjectsView 
             projects={projects}
             tasks={tasks}
-            onNewProject={() => setShowProjectModal(true)}
+            onNewProject={(mode) => setShowProjectModal(mode || true)}
             setActiveView={setActiveView}
             setActiveProjectId={setActiveProjectId}
             onProjectCreated={handleProjectCreated}
@@ -357,7 +357,7 @@ function AppContent() {
         setActiveView={setActiveView}
         setActiveProjectId={setActiveProjectId}
         onRefresh={fetchWorkspaceData}
-        onNewProject={() => setShowProjectModal(true)}
+        onNewProject={(mode) => setShowProjectModal(mode || true)}
         onNewTask={() => setShowTaskModal(true)}
         onOpenInviteModal={() => setShowInviteModal(true)}
         loading={loadingData}
@@ -379,7 +379,7 @@ function AppContent() {
           setActiveProjectId={setActiveProjectId}
           onLogout={() => setSkippedAuth(false)}
           onOpenInviteModal={() => setShowInviteModal(true)}
-          onNewProject={() => setShowProjectModal(true)}
+          onNewProject={(mode) => setShowProjectModal(mode || true)}
         />
 
         {/* Right Canvas Workspace Column */}
@@ -404,6 +404,7 @@ function AppContent() {
           token={token}
           onClose={() => setShowProjectModal(false)}
           onProjectCreated={handleProjectCreated}
+          initialMode={typeof showProjectModal === 'string' ? showProjectModal : 'scratch'}
         />
       )}
 
