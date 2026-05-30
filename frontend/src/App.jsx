@@ -17,6 +17,7 @@ import StrategyGoalsView from './components/StrategyGoalsView';
 import StrategyReportingView from './components/StrategyReportingView';
 import StrategyResourcingView from './components/StrategyResourcingView';
 import StrategyDashboardView from './components/StrategyDashboardView';
+import PeopleView from './components/PeopleView';
 import { CheckCircle } from 'lucide-react';
 
 function AppContent() {
@@ -200,7 +201,7 @@ function AppContent() {
       );
     }
 
-    if (activeModule !== 'work' && activeModule !== 'strategy') {
+    if (activeModule !== 'work' && activeModule !== 'strategy' && activeModule !== 'people') {
       return (
         <div className="flex-1 flex flex-col items-center justify-center bg-[#f9f9f9] select-none">
           <div className="h-12 w-12 rounded bg-[#e2e2e2] flex items-center justify-center mb-4 text-[#777777]">
@@ -312,6 +313,17 @@ function AppContent() {
             dashboardType={activeView}
             projects={projects}
             tasks={tasks}
+          />
+        );
+      case 'people-directory':
+      case 'my-profile':
+        return (
+          <PeopleView 
+            view={activeView}
+            setActiveView={setActiveView}
+            projects={projects}
+            tasks={tasks}
+            token={token}
           />
         );
       default:

@@ -82,6 +82,9 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                     } else if (mod.id === 'work') {
                       setActiveView('home');
                       setActiveProjectId(null);
+                    } else if (mod.id === 'people') {
+                      setActiveView('people-directory');
+                      setActiveProjectId(null);
                     }
                   }
                 }}
@@ -441,6 +444,40 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                     </button>
                   </div>
                 </div>
+              </>
+            ) : activeModule === 'people' ? (
+              <>
+                <nav className="space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setActiveView('people-directory');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'people-directory' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Users className={`h-4 w-4 ${activeView === 'people-directory' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Directory</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveView('my-profile');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'my-profile' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <User className={`h-4 w-4 ${activeView === 'my-profile' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>My Profile</span>
+                  </button>
+                </nav>
               </>
             ) : (
               <div className="px-3 py-4 text-xs text-[#8a8b8c] italic text-center">
