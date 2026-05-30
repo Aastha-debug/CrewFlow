@@ -1032,11 +1032,11 @@ const PeopleView = ({ view, setActiveView, projects = [], tasks = [], token }) =
                     <div className="flex items-center justify-between p-3 border border-gray-200 bg-white rounded-lg">
                       <div>
                         <span className="font-bold text-black block">Forward to Personal Task Board</span>
-                        <span className="text-[10px] font-mono text-[#3b66c5]">my-tasks@mail.crewflow.com</span>
+                        <span className="text-[10px] font-mono text-[#3b66c5]">my-tasks@email.com</span>
                       </div>
                       <button 
                         onClick={() => {
-                          navigator.clipboard.writeText("my-tasks@mail.crewflow.com");
+                          navigator.clipboard.writeText("my-tasks@email.com");
                           showToast("Personal alias copied!");
                         }}
                         className="text-[10px] font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded transition-colors uppercase tracking-wider"
@@ -1047,7 +1047,7 @@ const PeopleView = ({ view, setActiveView, projects = [], tasks = [], token }) =
 
                     {/* Active projects email list */}
                     {projects.map(proj => {
-                      const projAlias = `${proj.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}+${proj._id.slice(-6)}@mail.crewflow.com`;
+                      const projAlias = `${proj.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}@email.com`;
                       return (
                         <div key={proj._id} className="flex items-center justify-between p-3 border border-gray-200 bg-white rounded-lg">
                           <div>
