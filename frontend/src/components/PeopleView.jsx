@@ -343,65 +343,73 @@ const PeopleView = ({ view, setActiveView, projects = [], tasks = [], token }) =
         <div className="bg-white border border-[#e2e2e2] rounded-xl overflow-hidden shadow-2xs relative">
           
           {/* Cover gradient */}
-          <div className={`h-40 w-full relative transition-all ${uCover}`} />
+          <div className={`h-56 w-full relative transition-all ${uCover}`} />
 
           {/* Profile Details header */}
-          <div className="p-6 relative flex flex-col md:flex-row md:items-end justify-between gap-6 -mt-16 text-left">
-            <div className="flex flex-col md:flex-row md:items-end gap-5">
-              <div className={`h-28 w-28 rounded-full border-4 border-white flex items-center justify-center text-3xl font-extrabold shadow-xl select-none relative ${uAvatar?.bg || 'bg-neutral-800 text-white'}`}>
-                {initials}
-                {isAway && (
-                  <div className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center" title="Away Out-Of-Office">
-                    <Clock className="h-3.5 w-3.5 text-white" />
-                  </div>
-                )}
+          <div className="p-6 relative flex flex-col md:flex-row md:items-start justify-between gap-6 text-left">
+            <div className="flex flex-col md:flex-row md:items-start gap-5">
+              {/* Avatar shifted up to overlap cover photo */}
+              <div className="-mt-20 relative flex-shrink-0">
+                <div className={`h-28 w-28 rounded-full border-4 border-white flex items-center justify-center text-3xl font-extrabold shadow-xl select-none ${uAvatar?.bg || 'bg-neutral-800 text-white'}`}>
+                  {initials}
+                  {isAway && (
+                    <div className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center" title="Away Out-Of-Office">
+                      <Clock className="h-3.5 w-3.5 text-white" />
+                    </div>
+                  )}
+                </div>
               </div>
               
-              <div className="space-y-1.5 pb-2">
+              {/* User details information (not shifted upward) */}
+              <div className="space-y-1 pb-2">
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-2xl font-black text-[#1a1c1c] tracking-tight">{renderText(uName)}</h2>
                   <span className="text-[10px] text-gray-400 font-semibold px-2 py-0.5 border border-[#e2e2e2] rounded">{renderText(uPronouns)}</span>
                 </div>
                 <p className="text-xs text-black font-bold uppercase tracking-wider">{renderText(uTitle)}</p>
                 <p className="text-[11px] text-[#777777] font-semibold">{renderText(uDept)}</p>
+                
+                {/* Small Edit Profile / Set Out of Office directly under details */}
+                {isMe && (
+                  <div className="pt-2 flex flex-wrap items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setSettingsTab('profile');
+                        setShowSettingsModal(true);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-white border border-[#c6c6c6] hover:border-black text-[#5e5e5e] hover:text-black rounded text-[10px] font-bold transition-all shadow-3xs"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                      <span>Edit Profile</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowOooModal(true)}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-white border border-[#c6c6c6] hover:border-black text-[#5e5e5e] hover:text-black rounded text-[10px] font-bold transition-all shadow-3xs"
+                    >
+                      <Calendar className="h-3 w-3" />
+                      <span>Set Out of Office</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Quick Actions Panel */}
-            <div className="flex flex-wrap gap-2.5 pb-2">
-              {isMe ? (
-                <>
-                  <button 
-                    onClick={() => setShowOooModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#c6c6c6] hover:border-black text-[#5e5e5e] hover:text-black rounded text-xs font-bold transition-all shadow-2xs"
-                  >
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>{renderText("Set Out of Office")}</span>
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setSettingsTab('profile');
-                      setShowSettingsModal(true);
-                    }}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-black hover:bg-neutral-800 text-white rounded text-xs font-bold transition-all shadow-xs"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                    <span>{renderText("My Settings")}</span>
-                  </button>
-                </>
-              ) : (
+            {/* Quick Actions Panel for other users */}
+            {!isMe && (
+              <div className="flex flex-wrap gap-2.5 pb-2">
                 <button 
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
                     showToast("Profile link copied!");
                   }}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#c6c6c6] hover:border-black text-[#5e5e5e] hover:text-black rounded text-xs font-bold transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-white border border-[#c6c6c6] hover:border-black text-[#5e5e5e] hover:text-black rounded text-[10px] font-bold transition-all"
                 >
                   <Link2 className="h-3.5 w-3.5" />
                   <span>{renderText("Copy Link")}</span>
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Out of Office active notification banner */}
@@ -445,7 +453,7 @@ const PeopleView = ({ view, setActiveView, projects = [], tasks = [], token }) =
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
             {/* About Bio Left Section */}
             <div className="md:col-span-2 bg-white border border-[#e2e2e2] rounded-xl p-6 space-y-4">
-              <h3 className="text-sm font-bold text-black uppercase tracking-wider">{renderText("Teammate Biography")}</h3>
+              <h3 className="text-sm font-bold text-black uppercase tracking-wider">{renderText("About me")}</h3>
               <p className="text-xs text-[#5e5e5e] leading-relaxed font-medium bg-[#fafafb] border border-[#e2e2e2] p-4 rounded-lg italic">
                 "{renderText(uAbout)}"
               </p>
@@ -463,7 +471,7 @@ const PeopleView = ({ view, setActiveView, projects = [], tasks = [], token }) =
 
             {/* Profile Sidebar Right Info Card */}
             <div className="bg-white border border-[#e2e2e2] rounded-xl p-6 space-y-5">
-              <h3 className="text-sm font-bold text-black uppercase tracking-wider border-b border-[#eeeeee] pb-3">{renderText("Teammate Details")}</h3>
+              <h3 className="text-sm font-bold text-black uppercase tracking-wider border-b border-[#eeeeee] pb-3">{renderText("About")}</h3>
               
               <div className="space-y-4 text-xs">
                 <div>
