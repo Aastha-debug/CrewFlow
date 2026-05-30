@@ -18,6 +18,7 @@ import StrategyReportingView from './components/StrategyReportingView';
 import StrategyResourcingView from './components/StrategyResourcingView';
 import StrategyDashboardView from './components/StrategyDashboardView';
 import PeopleView from './components/PeopleView';
+import TeamView from './components/TeamView';
 import { CheckCircle } from 'lucide-react';
 
 function AppContent() {
@@ -29,6 +30,7 @@ function AppContent() {
   const [activeModule, setActiveModule] = useState('work'); // 'work' | 'strategy' | 'workflow' | 'people'
   const [activeView, setActiveView] = useState('home'); // 'home' | 'inbox' | 'my-tasks' | 'portfolios' | 'project-details'
   const [activeProjectId, setActiveProjectId] = useState(null);
+  const [activeTeamId, setActiveTeamId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Core Data States
@@ -326,6 +328,16 @@ function AppContent() {
             token={token}
           />
         );
+      case 'team-details':
+        return (
+          <TeamView 
+            activeTeamId={activeTeamId}
+            setActiveView={setActiveView}
+            projects={projects}
+            tasks={tasks}
+            token={token}
+          />
+        );
       default:
         return (
           <div className="flex-1 flex items-center justify-center text-xs text-[#777777] italic">
@@ -392,6 +404,8 @@ function AppContent() {
           onLogout={() => setSkippedAuth(false)}
           onOpenInviteModal={() => setShowInviteModal(true)}
           onNewProject={(mode) => setShowProjectModal(mode || true)}
+          activeTeamId={activeTeamId}
+          setActiveTeamId={setActiveTeamId}
         />
 
         {/* Right Canvas Workspace Column */}

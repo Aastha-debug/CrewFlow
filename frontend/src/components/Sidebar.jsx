@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveView, projects = [], activeProjectId, setActiveProjectId, onLogout, onOpenInviteModal, onNewProject }) => {
+const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveView, projects = [], activeProjectId, setActiveProjectId, onLogout, onOpenInviteModal, onNewProject, activeTeamId, setActiveTeamId }) => {
   const { user, logout } = useAuth();
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
@@ -85,6 +85,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                     } else if (mod.id === 'people') {
                       setActiveView('people-directory');
                       setActiveProjectId(null);
+                      if (setActiveTeamId) setActiveTeamId(null);
                     }
                   }
                 }}
@@ -452,6 +453,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                     onClick={() => {
                       setActiveView('people-directory');
                       setActiveProjectId(null);
+                      if (setActiveTeamId) setActiveTeamId(null);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
                       activeView === 'people-directory' 
@@ -467,6 +469,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                     onClick={() => {
                       setActiveView('my-profile');
                       setActiveProjectId(null);
+                      if (setActiveTeamId) setActiveTeamId(null);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
                       activeView === 'my-profile' 
@@ -478,6 +481,48 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                     <span>My Profile</span>
                   </button>
                 </nav>
+
+                <div className="mt-4 pt-4 border-t border-[#2d2e30]/50 space-y-1">
+                  <div className="flex items-center justify-between px-3 py-1.5">
+                    <span className="text-[10px] font-semibold text-[#8a8b8c] uppercase tracking-wider">
+                      Teams
+                    </span>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <button
+                      onClick={() => {
+                        setActiveView('team-details');
+                        setActiveProjectId(null);
+                        if (setActiveTeamId) setActiveTeamId('prod-design');
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        activeView === 'team-details' && activeTeamId === 'prod-design'
+                          ? 'bg-[#3b3c3e] text-white' 
+                          : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                      }`}
+                    >
+                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="truncate">Product & Design Team</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setActiveView('team-details');
+                        setActiveProjectId(null);
+                        if (setActiveTeamId) setActiveTeamId('engineering');
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        activeView === 'team-details' && activeTeamId === 'engineering'
+                          ? 'bg-[#3b3c3e] text-white' 
+                          : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                      }`}
+                    >
+                      <div className="h-2 w-2 rounded-full bg-indigo-500" />
+                      <span className="truncate">Engineering Team</span>
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <div className="px-3 py-4 text-xs text-[#8a8b8c] italic text-center">
