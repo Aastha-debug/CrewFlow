@@ -3057,6 +3057,7 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                     <span>Active integrations: {fields.reduce((acc, curr) => acc + curr.projectsCount, 0)} project links</span>
                   </div>
                 </div>
+                )}
               </div>
             )}
 
@@ -3248,6 +3249,7 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                     <span>Total triggered events: {rules.reduce((acc, curr) => acc + curr.triggersCount, 0)} fires</span>
                   </div>
                 </div>
+                )}
               </div>
             )}
 
