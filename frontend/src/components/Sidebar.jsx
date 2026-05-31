@@ -65,7 +65,14 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
       {/* 1. Primary Slim Sidebar */}
       <aside className="w-[72px] bg-[#222325] border-r border-[#2d2e30] flex flex-col items-center py-4 gap-6">
         
-
+        {/* Triple Line Sidebar Minimizer */}
+        <button
+          onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+          className="text-[#8a8b8c] hover:text-white hover:bg-[#2d2e30] p-2 rounded-xl transition-all duration-200"
+          title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
 
         {/* Modules List */}
         <div className="flex flex-col gap-4 w-full px-2">
