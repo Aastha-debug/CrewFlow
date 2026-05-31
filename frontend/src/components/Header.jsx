@@ -23,7 +23,8 @@ import {
   CheckSquare,
   MessageSquare,
   Tag,
-  LayoutTemplate
+  LayoutTemplate,
+  Menu
 } from 'lucide-react';
 
 const Header = ({ 
@@ -294,6 +295,14 @@ const Header = ({
       
       {/* Sidebar Toggle, Logo + Brand Name, and Active Section Name */}
       <div className="flex items-center gap-3">
+        {/* Sidebar Toggle Hamburger Button */}
+        <button
+          onClick={onToggleSidebar}
+          className="text-gray-300 hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors flex-shrink-0"
+          title="Minimize/Expand Sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
 
         {/* Brand Group: Logo + Brand Name */}
         <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
