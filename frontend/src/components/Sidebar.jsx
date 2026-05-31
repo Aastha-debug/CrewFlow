@@ -24,7 +24,8 @@ import {
   Activity,
   Play,
   Layers,
-  Copy
+  Copy,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
