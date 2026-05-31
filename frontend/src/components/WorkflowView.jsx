@@ -3905,57 +3905,18 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                     </div>
                   </div>
 
-                  {/* Create Button with Dropdown downbar menu */}
-                  <div className="relative flex items-center">
-                    <button 
-                      onClick={() => {
-                        setWizardTitle('Sprint Scrum Plan');
-                        setWizardScope('organization');
-                        setIsProjectTemplateWizardOpen(true);
-                      }} 
-                      className="bg-black hover:bg-neutral-800 text-white text-xs font-bold tracking-wider uppercase pl-4 pr-3 py-2.5 rounded-l-lg shadow flex items-center justify-center gap-1.5 border-r border-neutral-700 transition-colors"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Create template</span>
-                    </button>
-                    <button
-                      onClick={() => setIsCreateDropdownOpen(!isCreateDropdownOpen)}
-                      className="bg-black hover:bg-neutral-800 text-white px-2.5 py-2.5 rounded-r-lg shadow transition-colors flex items-center justify-center cursor-pointer border-l border-neutral-700/30"
-                      title="More Options"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-
-                    {isCreateDropdownOpen && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setIsCreateDropdownOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-20 p-1.5 animate-scale-in text-left">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsCreateDropdownOpen(false);
-                              setWizardTitle('New Board Template');
-                              setWizardScope('organization');
-                              setIsProjectTemplateWizardOpen(true);
-                            }}
-                            className="w-full text-left p-2 hover:bg-[#f3f4f6] rounded-lg text-xs font-semibold text-[#1a1c1c]"
-                          >
-                            Create project template
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsCreateDropdownOpen(false);
-                              alert('Redirecting to the global Asana project templates gallery browse ledger.');
-                            }}
-                            className="w-full text-left p-2 hover:bg-[#f3f4f6] rounded-lg text-xs font-semibold text-[#1a1c1c] border-t border-[#e2e2e2]/60 mt-1"
-                          >
-                            Browse templates
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {/* Create Template Button */}
+                  <button 
+                    onClick={() => {
+                      setWizardTitle('Sprint Scrum Plan');
+                      setWizardScope('organization');
+                      setIsProjectTemplateWizardOpen(true);
+                    }} 
+                    className="bg-black hover:bg-neutral-800 text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Create template</span>
+                  </button>
                 </div>
 
                 {filteredTemplates.length === 0 ? (
