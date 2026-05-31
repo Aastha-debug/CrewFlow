@@ -387,8 +387,13 @@ const DEFAULT_TASK_TYPES = [
 export default function WorkflowView({ view, setActiveView, projects = [], tasks = [], onTaskCreated, token }) {
   // --- STATE: CUSTOM FIELDS ---
   const [fields, setFields] = useState(() => {
-    const saved = localStorage.getItem('crewflow_custom_fields');
-    return saved ? JSON.parse(saved) : DEFAULT_FIELDS;
+    try {
+      const saved = localStorage.getItem('crewflow_custom_fields');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_FIELDS;
+    } catch (e) {
+      return DEFAULT_FIELDS;
+    }
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -416,8 +421,13 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   // --- STATE: PROJECT TEMPLATES ---
   const [templates, setTemplates] = useState(() => {
-    const saved = localStorage.getItem('crewflow_project_templates');
-    return saved ? JSON.parse(saved) : DEFAULT_TEMPLATES;
+    try {
+      const saved = localStorage.getItem('crewflow_project_templates');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_TEMPLATES;
+    } catch (e) {
+      return DEFAULT_TEMPLATES;
+    }
   });
 
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
@@ -439,8 +449,13 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   // --- STATE: STATUS TEMPLATES ---
   const [statusTemplates, setStatusTemplates] = useState(() => {
-    const saved = localStorage.getItem('crewflow_status_templates');
-    return saved ? JSON.parse(saved) : DEFAULT_STATUS_TEMPLATES;
+    try {
+      const saved = localStorage.getItem('crewflow_status_templates');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_STATUS_TEMPLATES;
+    } catch (e) {
+      return DEFAULT_STATUS_TEMPLATES;
+    }
   });
 
   const [statusSearchQuery, setStatusSearchQuery] = useState('');
@@ -462,8 +477,13 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   // --- STATE: AUTOMATED RULES ---
   const [rules, setRules] = useState(() => {
-    const saved = localStorage.getItem('crewflow_rules');
-    return saved ? JSON.parse(saved) : DEFAULT_RULES;
+    try {
+      const saved = localStorage.getItem('crewflow_rules');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_RULES;
+    } catch (e) {
+      return DEFAULT_RULES;
+    }
   });
 
   const [ruleSearchQuery, setRuleSearchQuery] = useState('');
@@ -481,8 +501,13 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   // --- STATE: INTAKE FORMS ---
   const [forms, setForms] = useState(() => {
-    const saved = localStorage.getItem('crewflow_forms');
-    return saved ? JSON.parse(saved) : DEFAULT_FORMS;
+    try {
+      const saved = localStorage.getItem('crewflow_forms');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_FORMS;
+    } catch (e) {
+      return DEFAULT_FORMS;
+    }
   });
 
   const [formSearchQuery, setFormSearchQuery] = useState('');
@@ -525,8 +550,13 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   // --- STATE: TASK TYPES ---
   const [taskTypes, setTaskTypes] = useState(() => {
-    const saved = localStorage.getItem('crewflow_task_types');
-    return saved ? JSON.parse(saved) : DEFAULT_TASK_TYPES;
+    try {
+      const saved = localStorage.getItem('crewflow_task_types');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_TASK_TYPES;
+    } catch (e) {
+      return DEFAULT_TASK_TYPES;
+    }
   });
 
   const [taskTypeSearchQuery, setTaskTypeSearchQuery] = useState('');
