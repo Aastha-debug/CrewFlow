@@ -3363,7 +3363,7 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
               <div className="flex flex-col gap-1.5 pt-2">
                 <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Starting framework</label>
                 <select value={newTemplateSource} onChange={(e) => setNewTemplateSource(e.target.value)} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-3 py-2.5 text-xs font-bold text-[#1a1c1c] outline-none">
-                  <option value="scratch">Start from scratch (To Do -> Done pipeline)</option>
+                  <option value="scratch">Start from scratch (To Do to Done pipeline)</option>
                   <option value="scrum">Clone Sprint Scrum standard columns (Backlog, Dev, QA, Done)</option>
                   <option value="marketing">Clone Marketing launch standard columns (Planning, Design, Approved, Live)</option>
                 </select>
