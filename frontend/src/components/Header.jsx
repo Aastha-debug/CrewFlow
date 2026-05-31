@@ -291,40 +291,45 @@ const Header = ({
   ];
 
   return (
-    <header className="h-14 border-b border-[#2d2e30] bg-[#1e1f21] text-white flex items-center justify-between px-6 select-none flex-shrink-0 relative z-30">
+    <header className="h-14 border-b border-[#2d2e30] bg-[#1e1f21] text-white flex items-center justify-between pl-0 pr-6 select-none flex-shrink-0 relative z-30">
       
-      {/* Sidebar Toggle, Logo + Brand Name, and Active Section Name */}
-      <div className="flex items-center gap-3">
-        {/* Sidebar Toggle Hamburger Button */}
-        <button
-          onClick={onToggleSidebar}
-          className="text-gray-300 hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors flex-shrink-0"
-          title="Minimize/Expand Sidebar"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-
-        {/* Brand Group: Logo + Brand Name */}
-        <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
-          {/* Brand Logo (Inverted to White with Screen Blending for perfect dark-mode integration) */}
-          <img 
-            src="/logo.png" 
-            alt="CrewFlow Logo" 
-            className="h-6 w-auto object-contain invert mix-blend-screen opacity-95 hover:opacity-100 transition-opacity"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-          {/* CrewFlow Brand Name Text */}
-          <span className="text-sm font-extrabold tracking-tight text-white select-none">
-            Crew<span className="text-[#3b66c5]">Flow</span>
-          </span>
+      {/* Left aligned brand & controls */}
+      <div className="flex items-center h-full">
+        {/* 1. Sidebar Toggle Hamburger Button slot (aligned with slim sidebar width of 72px) */}
+        <div className="w-[72px] h-full flex items-center justify-center border-r border-[#2d2e30] flex-shrink-0">
+          <button
+            onClick={onToggleSidebar}
+            className="text-gray-300 hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors"
+            title="Minimize/Expand Sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Active Section Name */}
-        <h1 className="text-xs font-bold text-gray-300 tracking-wide uppercase px-2 py-0.5 bg-white/5 border border-white/10 rounded flex-shrink-0">
-          {getSectionLabel()}
-        </h1>
+        {/* 2. Brand Group & Active Section (aligned with sub-sidebar content starting at 72px) */}
+        <div className="flex items-center gap-3 pl-5 h-full">
+          {/* Brand Group: Logo + Brand Name */}
+          <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
+            {/* Brand Logo (Inverted to White with Screen Blending for perfect dark-mode integration) */}
+            <img 
+              src="/logo.png" 
+              alt="CrewFlow Logo" 
+              className="h-6 w-auto object-contain invert mix-blend-screen opacity-95 hover:opacity-100 transition-opacity"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+            {/* CrewFlow Brand Name Text */}
+            <span className="text-sm font-extrabold tracking-tight text-white select-none">
+              Crew<span className="text-[#3b66c5]">Flow</span>
+            </span>
+          </div>
+
+          {/* Active Section Name */}
+          <h1 className="text-xs font-bold text-gray-300 tracking-wide uppercase px-2 py-0.5 bg-white/5 border border-white/10 rounded flex-shrink-0">
+            {getSectionLabel()}
+          </h1>
+        </div>
       </div>
 
       {/* Global Advanced Interactive Search Bar */}

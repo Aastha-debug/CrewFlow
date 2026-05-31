@@ -398,6 +398,16 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  
+  // Custom owner filter and project picker states to match Asana inspiration screenshots
+  const [fieldOwnerFilter, setFieldOwnerFilter] = useState('all'); // 'all' | 'owner'
+  const [ruleOwnerFilter, setRuleOwnerFilter] = useState('all'); // 'all' | 'owner'
+  const [formOwnerFilter, setFormOwnerFilter] = useState('all'); // 'all' | 'owner'
+  const [templateOwnerFilter, setTemplateOwnerFilter] = useState('all'); // 'all' | 'owner'
+  const [taskTypeCreatedByFilter, setTaskTypeCreatedByFilter] = useState('all'); // 'all' | 'me'
+  const [projectPickerType, setProjectPickerType] = useState(null); // 'fields' | 'rules' | 'forms' | 'status-templates'
+  const [projectPickerSearch, setProjectPickerSearch] = useState('');
+  const [projectPickerPermission, setProjectPickerPermission] = useState('Organization only'); // for forms
 
   // Custom Fields Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -498,6 +508,46 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
   const [newRuleActionType, setNewRuleActionType] = useState('assign-member');
   const [newRuleActionVal, setNewRuleActionVal] = useState('tech-lead@crewflow.com');
   const [rulesToast, setRulesToast] = useState('');
+
+  // --- ADDITIONAL INTERACTIVE ENG COMPONENT STATES ---
+  // Forms: Added to form modal state
+  const [isAddedToFormModalOpen, setIsAddedToFormModalOpen] = useState(false);
+
+  // Project Templates: Wizard and Builder
+  const [isProjectTemplateWizardOpen, setIsProjectTemplateWizardOpen] = useState(false);
+  const [wizardTitle, setWizardTitle] = useState('Sprint Scrum Plan');
+  const [wizardScope, setWizardScope] = useState('organization');
+  const [wizardActiveTab, setWizardActiveTab] = useState('List');
+  const [projectRoles, setProjectRoles] = useState(['Project Lead', 'Editor', 'Reviewer']);
+  const [showRolesPopover, setShowRolesPopover] = useState(false);
+  const [newRoleInput, setNewRoleInput] = useState('');
+  const [shiftDependencies, setShiftDependencies] = useState(true);
+  const [columnsConfig, setColumnsConfig] = useState({
+    assignee: true,
+    dueDate: true,
+    projects: false,
+    tags: true,
+    blockedBy: false,
+    blocking: false,
+    attachments: true
+  });
+
+  // Status Templates horizontal selector & builder narrative rich text simulator
+  const [activeStatusTab, setActiveStatusTab] = useState('Projects'); // 'Projects' | 'Portfolios'
+  const [statusTemplateSelection, setStatusTemplateSelection] = useState('On Track');
+  const [simulatedRichTextFormat, setSimulatedRichTextFormat] = useState({ bold: false, italic: false, underline: false, code: false });
+  const [focusedNarrativeField, setFocusedNarrativeField] = useState(null);
+
+  // Task Types status mapper state lists
+  const [activeStatuses, setActiveStatuses] = useState([
+    { id: '1', label: 'New Request', code: 'N', color: 'red' },
+    { id: '2', label: 'In Investigation', code: 'I', color: 'amber' }
+  ]);
+  const [doneStatuses, setDoneStatuses] = useState([
+    { id: '3', label: 'Completed', code: 'C', color: 'emerald' }
+  ]);
+  const [newStatusInputName, setNewStatusInputName] = useState('');
+  const [newStatusInputGroup, setNewStatusInputGroup] = useState('active'); // 'active' | 'done'
 
   // --- STATE: INTAKE FORMS ---
   const [forms, setForms] = useState(() => {
@@ -665,6 +715,82 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
     return COLOR_SWATCHES.find(sw => sw.id === colorId) || COLOR_SWATCHES[7];
   };
 
+  const renderProjectPicker = (type, onAdd) => {
+    if (projectPickerType !== type) return null;
+    return (
+      <>
+        <div className="fixed inset-0 z-30" onClick={() => setProjectPickerType(null)} />
+        <div className="absolute right-0 mt-2 w-[300px] bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-50 p-4 animate-scale-in text-left text-xs font-sans font-medium text-[#1a1c1c]">
+          {/* Tabs bar */}
+          <div className="flex border-b border-[#e2e2e2] mb-3 text-center">
+            <button type="button" className="flex-1 pb-2 font-bold border-b-2 border-black text-[#1a1c1c]">Select a project</button>
+            <button type="button" className="flex-1 pb-2 font-semibold text-zinc-400 hover:text-black">New project</button>
+          </div>
+          {/* Body */}
+          <div className="flex flex-col gap-3">
+            <div>
+              <span className="block font-bold text-zinc-500 mb-1 text-[10px] uppercase tracking-wider">Choose project</span>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                <input 
+                  type="text" 
+                  value={projectPickerSearch} 
+                  onChange={(e) => setProjectPickerSearch(e.target.value)} 
+                  placeholder="Add a project by name" 
+                  className="w-full pl-8 pr-3 py-2 border border-[#e2e2e2] rounded-lg bg-[#f9f9f9] text-xs font-medium focus:outline-none"
+                />
+              </div>
+            </div>
+            
+            {/* List matching projects */}
+            <div className="max-h-24 overflow-y-auto divide-y divide-[#e2e2e2]/60 select-none">
+              {(projects.length > 0 ? projects : [{ id: 'mock-1', name: 'CrewFlow Product Launch' }, { id: 'mock-2', name: 'Monochrome Overhaul' }])
+                .filter(p => p.name.toLowerCase().includes(projectPickerSearch.toLowerCase()))
+                .map(p => (
+                  <button 
+                    key={p.id || p._id} 
+                    type="button" 
+                    onClick={() => {
+                      setProjectPickerSearch(p.name);
+                    }}
+                    className="w-full text-left py-2 px-2 hover:bg-[#f3f4f6] rounded font-semibold text-[#1a1c1c] transition-colors"
+                  >
+                    {p.name}
+                  </button>
+                ))
+              }
+            </div>
+
+            {type === 'forms' && (
+              <div>
+                <span className="block font-bold text-zinc-500 mb-1 text-[10px] uppercase tracking-wider">Form access permissions</span>
+                <select 
+                  value={projectPickerPermission} 
+                  onChange={(e) => setProjectPickerPermission(e.target.value)} 
+                  className="w-full border border-[#e2e2e2] rounded-lg px-2.5 py-1.5 bg-[#f9f9f9] text-xs font-bold cursor-pointer"
+                >
+                  <option value="Organization only">Organization only</option>
+                  <option value="Public via share link">Public via share link</option>
+                </select>
+              </div>
+            )}
+
+            <button 
+              type="button" 
+              onClick={() => {
+                setProjectPickerType(null);
+                onAdd(projectPickerSearch || 'General Board');
+              }}
+              className="mt-1 w-full bg-black hover:bg-neutral-800 text-white font-bold py-2 rounded-lg text-center transition-colors shadow"
+            >
+              Add to project
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   // --- OPERATIONS: CUSTOM FIELDS ---
   const handleOpenCreateModal = () => {
     setModalMode('create');
@@ -807,6 +933,37 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
     setTemplates(prev => [newTmpl, ...prev]);
     setIsCreateTemplateModalOpen(false);
+    handleOpenTemplateBuilder(newTmpl);
+  };
+
+  const handleWizardSubmit = (e) => {
+    e.preventDefault();
+    if (!wizardTitle.trim()) return;
+
+    let defaultCols = ['To Do', 'In Progress', 'QA', 'Done'];
+    if (newTemplateSource === 'scrum') {
+      defaultCols = ['Sprint Backlog', 'Ready for Dev', 'In Progress', 'QA / Review', 'Done'];
+    } else if (newTemplateSource === 'marketing') {
+      defaultCols = ['Planning', 'In Progress', 'Approval Phase', 'Campaign Live', 'Complete'];
+    }
+
+    const defaultTabs = ['List', 'Board', 'Timeline', 'Calendar', 'Dashboard'];
+
+    const newTmpl = {
+      id: `tmpl-${Date.now()}`,
+      name: wizardTitle.trim(),
+      description: newTemplateDesc.trim() || 'Custom template created via fine-touch creation wizard.',
+      createdBy: { name: 'Guest User', email: 'guest@crewflow.com', avatarBg: 'bg-[#fca5a5] text-[#991b1b]' },
+      scope: wizardScope,
+      usedCount: 0,
+      activeTabs: defaultTabs,
+      columns: defaultCols,
+      whoCanUse: wizardScope === 'organization' ? 'Anyone in organization' : 'Admins & owners only',
+      whoCanEdit: 'Only template owners'
+    };
+
+    setTemplates(prev => [newTmpl, ...prev]);
+    setIsProjectTemplateWizardOpen(false);
     handleOpenTemplateBuilder(newTmpl);
   };
 
@@ -1299,21 +1456,24 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
     const matchesSearch = field.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (field.description && field.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesType = typeFilter === 'all' || field.type === typeFilter;
-    return matchesSearch && matchesType;
+    const matchesOwner = fieldOwnerFilter === 'all' || field.scope === 'project-only'; // simulated owner filter matches project-only scope
+    return matchesSearch && matchesType && matchesOwner;
   });
 
   const filteredTemplates = templates.filter(tmpl => {
     const matchesSearch = tmpl.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) ||
                           (tmpl.description && tmpl.description.toLowerCase().includes(templateSearchQuery.toLowerCase()));
     const matchesFilter = templateFilter === 'all' || tmpl.scope === templateFilter;
-    return matchesSearch && matchesFilter;
+    const matchesOwner = templateOwnerFilter === 'all' || tmpl.scope === 'project-only'; // simulated
+    return matchesSearch && matchesFilter && matchesOwner;
   });
 
   const filteredStatusTemplates = statusTemplates.filter(st => {
     const matchesSearch = st.name.toLowerCase().includes(statusSearchQuery.toLowerCase()) ||
                           (st.description && st.description.toLowerCase().includes(statusSearchQuery.toLowerCase()));
     const matchesFilter = statusFilter === 'all' || st.type === statusFilter;
-    return matchesSearch && matchesFilter;
+    const matchesTab = (activeStatusTab === 'Projects' ? st.type === 'Project' : st.type === 'Portfolio');
+    return matchesSearch && matchesFilter && matchesTab;
   });
 
   const filteredRules = rules.filter(rule => {
@@ -1325,7 +1485,8 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
     if (ruleFilter === 'active') matchesStatus = rule.active;
     else if (ruleFilter === 'inactive') matchesStatus = !rule.active;
 
-    return matchesSearch && matchesStatus;
+    const matchesOwner = ruleOwnerFilter === 'all' || rule.scope === 'project-only'; // simulated
+    return matchesSearch && matchesStatus && matchesOwner;
   }).sort((a, b) => {
     if (ruleSort === 'triggers') return b.triggersCount - a.triggersCount;
     if (ruleSort === 'alphabetical') return a.name.localeCompare(b.name);
@@ -1341,7 +1502,8 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
     if (formFilter === 'active') matchesStatus = form.active;
     else if (formFilter === 'inactive') matchesStatus = !form.active;
 
-    return matchesSearch && matchesStatus;
+    const matchesOwner = formOwnerFilter === 'all' || form.scope === 'Public via share link'; // simulated
+    return matchesSearch && matchesStatus && matchesOwner;
   }).sort((a, b) => {
     if (formSort === 'submissions') return b.submissionsCount - a.submissionsCount;
     if (formSort === 'alphabetical') return a.name.localeCompare(b.name);
@@ -1397,9 +1559,121 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
           </div>
 
           <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
-            <div className="flex-1 flex flex-col min-w-0 bg-[#f9f9f9] overflow-hidden">
-              <div className="px-8 py-3 border-b border-[#e2e2e2] bg-white flex items-center justify-between flex-shrink-0">
-                <div className="flex items-center gap-1.5 overflow-x-auto">
+            {/* LEFT SIDEBAR: Steps, Roles & Dependencies */}
+            <aside className="w-64 bg-white border-r border-[#e2e2e2] flex flex-col flex-shrink-0 h-full overflow-y-auto font-sans text-xs">
+              <div className="p-5 space-y-6 text-left">
+                {/* Steps 1, 2, 3 */}
+                <div className="space-y-4">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block">Deployment Steps</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="h-6 w-6 rounded-full bg-black text-white flex items-center justify-center font-bold text-[10px]">1</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[#1a1c1c]">Core Architecture</span>
+                        <span className="text-[9px] text-[#777777]">Set views & columns</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="h-6 w-6 rounded-full bg-neutral-200 text-zinc-600 flex items-center justify-center font-bold text-[10px]">2</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-neutral-500">Automation Trigger</span>
+                        <span className="text-[9px] text-[#777777]">Set rules & hooks</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="h-6 w-6 rounded-full bg-neutral-200 text-zinc-600 flex items-center justify-center font-bold text-[10px]">3</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-neutral-500">Forms Integration</span>
+                        <span className="text-[9px] text-[#777777]">Set client intake</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Roles Pills Manager */}
+                <div className="space-y-3 pt-5 border-t border-[#e2e2e2] relative">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Project Roles</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowRolesPopover(!showRolesPopover)}
+                      className="text-[#777777] hover:text-black font-bold uppercase text-[9px] flex items-center gap-0.5"
+                    >
+                      <Plus className="h-3 w-3" /> Add
+                    </button>
+                  </div>
+
+                  {showRolesPopover && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowRolesPopover(false)} />
+                      <div className="absolute left-0 mt-1 w-full bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-20 p-3 flex flex-col gap-2">
+                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Add Role Pill</span>
+                        <div className="flex gap-1.5">
+                          <input 
+                            type="text" 
+                            value={newRoleInput} 
+                            onChange={(e) => setNewRoleInput(e.target.value)} 
+                            placeholder="e.g. Lead Designer" 
+                            className="flex-1 bg-[#f9f9f9] border border-[#e2e2e2] rounded px-2 py-1 text-xs focus:outline-none focus:bg-white" 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              if (newRoleInput.trim() && !projectRoles.includes(newRoleInput.trim())) {
+                                setProjectRoles(prev => [...prev, newRoleInput.trim()]);
+                                setNewRoleInput('');
+                              }
+                              setShowRolesPopover(false);
+                            }}
+                            className="bg-black hover:bg-neutral-800 text-white px-2.5 py-1 rounded text-[10px] font-bold"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {projectRoles.map(role => (
+                      <span key={role} className="flex items-center gap-1 bg-zinc-50 border border-zinc-200 text-[#555] font-bold px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider group/role">
+                        <span>{role}</span>
+                        <button 
+                          type="button"
+                          onClick={() => setProjectRoles(prev => prev.filter(r => r !== role))}
+                          className="text-neutral-400 hover:text-red-700 ml-0.5 opacity-0 group-hover/role:opacity-100 transition-opacity"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Shift Dependencies */}
+                <div className="space-y-3 pt-5 border-t border-[#e2e2e2]">
+                  <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block">Dependency Settings</span>
+                  <div className="flex items-start gap-2.5">
+                    <input 
+                      type="checkbox" 
+                      id="shift-dep" 
+                      checked={shiftDependencies} 
+                      onChange={(e) => setShiftDependencies(e.target.checked)} 
+                      className="mt-0.5 accent-black h-3.5 w-3.5" 
+                    />
+                    <div className="flex flex-col text-left">
+                      <label htmlFor="shift-dep" className="font-bold text-[#1a1c1c] text-xs">Shift Dependencies</label>
+                      <span className="text-[9px] text-[#777777] leading-normal mt-0.5">Automatically align dependent task due dates when predecessor schedules change.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* CENTER PREVIEW: Live board / list preview canvas */}
+            <div className="flex-1 flex flex-col min-w-0 bg-[#f9f9f9] overflow-hidden relative">
+              <div className="px-8 py-3 border-b border-[#e2e2e2] bg-white flex items-center justify-between flex-shrink-0 z-10">
+                <div className="flex items-center gap-1.5 overflow-x-auto relative">
                   {tempBuilderTemplate.activeTabs.map((tab) => (
                     <button
                       key={tab}
@@ -1413,9 +1687,37 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       {tab} view
                     </button>
                   ))}
-                  <button onClick={() => setShowAddTabOptions(!showAddTabOptions)} className="p-1.5 border border-dashed border-[#c5c6c7] hover:border-black rounded-lg text-[#777777] hover:text-black">
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
+                  
+                  <div className="relative">
+                    <button onClick={() => setShowAddTabOptions(!showAddTabOptions)} className="p-1.5 border border-dashed border-[#c5c6c7] hover:border-black rounded-lg text-[#777777] hover:text-black flex items-center justify-center">
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                    {showAddTabOptions && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowAddTabOptions(false)} />
+                        <div className="absolute left-0 mt-1.5 w-52 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-20 p-1.5 animate-scale-in text-left">
+                          <span className="text-[9px] text-[#777777] font-bold uppercase tracking-widest px-2.5 py-1.5 block">Popular Tabs</span>
+                          {['List', 'Board', 'Timeline', 'Calendar', 'Gantt', 'Dashboard', 'Messages', 'Files'].map(tab => {
+                            const isActive = tempBuilderTemplate.activeTabs.includes(tab);
+                            return (
+                              <button
+                                key={tab}
+                                type="button"
+                                onClick={() => {
+                                  handleBuilderToggleTab(tab);
+                                  setShowAddTabOptions(false);
+                                }}
+                                className="w-full text-left p-2 hover:bg-[#f3f4f6] rounded-lg flex items-center justify-between text-xs font-semibold text-[#1a1c1c] transition-colors"
+                              >
+                                <span>{tab} view</span>
+                                {isActive ? <Check className="h-3.5 w-3.5 text-black stroke-[2.5px]" /> : <Plus className="h-3.5 w-3.5 text-zinc-400" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider hidden sm:block">Live View Layout Simulator</div>
               </div>
@@ -1428,17 +1730,39 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                         <div className="flex items-center justify-between pb-3 border-b border-[#e2e2e2] mb-3">
                           <span className="font-bold text-xs text-[#1a1c1c] tracking-tight">{col}</span>
                           <button onClick={() => handleBuilderRemoveColumn(col)} className="p-1 hover:bg-[#e2e2e2] rounded text-zinc-400 hover:text-red-700">
-                            <X className="h-3 w-3" />
+                            <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
-                        <div className="py-12 border border-dashed border-[#c5c6c7]/60 rounded-lg text-center bg-white flex flex-col items-center justify-center p-4">
-                          <Sliders className="h-5 w-5 text-zinc-300 stroke-[1.5px]" />
-                          <span className="text-[10px] font-semibold text-zinc-400 uppercase mt-1">Empty Column</span>
-                          <span className="text-[9px] text-[#777777] mt-0.5 leading-normal text-center">Task cards appear when instantiated</span>
+                        
+                        {/* Interactive Board Column Preview Card sensitive to show/hide columns */}
+                        <div className="space-y-3">
+                          <div className="bg-white rounded-lg border border-[#e2e2e2] p-3 shadow-xs space-y-2 text-left">
+                            <h4 className="text-xs font-bold text-[#1a1c1c] leading-snug">Sprint kickoff review deliverable</h4>
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {columnsConfig.assignee && (
+                                <div className="h-5 w-5 rounded-full bg-zinc-800 text-white flex items-center justify-center font-bold text-[8px]" title="Assignee">TL</div>
+                              )}
+                              {columnsConfig.dueDate && (
+                                <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-100 text-[8px] font-bold">June 10</span>
+                              )}
+                              {columnsConfig.projects && (
+                                <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-800 border border-zinc-200 text-[8px] font-bold">Core Sprint</span>
+                              )}
+                              {columnsConfig.tags && (
+                                <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[8px] font-bold">kickoff</span>
+                              )}
+                            </div>
+                            {columnsConfig.attachments && (
+                              <div className="text-[9px] text-zinc-400 font-bold border-t border-[#e2e2e2]/60 pt-1.5 flex items-center gap-1">
+                                <Upload className="h-2.5 w-2.5" /> brief_visuals.pdf
+                              </div>
+                            )}
+                          </div>
                         </div>
+
                       </div>
                     ))}
-                    <form onSubmit={handleBuilderAddColumn} className="w-72 bg-white rounded-xl border border-[#e2e2e2] p-4 flex flex-col gap-2 flex-shrink-0 shadow-sm">
+                    <form onSubmit={handleBuilderAddColumn} className="w-72 bg-white rounded-xl border border-[#e2e2e2] p-4 flex flex-col gap-2 flex-shrink-0 shadow-sm text-left">
                       <label className="text-[9px] font-bold text-[#777777] uppercase tracking-wider">New Status Column</label>
                       <div className="flex gap-2">
                         <input type="text" value={newColumnInput} onChange={(e) => setNewColumnInput(e.target.value)} placeholder="e.g. Ready for QA" className="flex-1 bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:bg-white focus:ring-1 focus:ring-black" />
@@ -1449,19 +1773,73 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                 )}
 
                 {builderActivePreviewTab === 'List' && (
-                  <div className="bg-white rounded-xl border border-[#e2e2e2] p-6 shadow-sm max-w-4xl mx-auto flex flex-col gap-4">
-                    <h3 className="text-xs font-bold text-[#777777] uppercase tracking-widest border-b border-[#e2e2e2]/60 pb-2">Simulated Sprint Task Card Structure</h3>
-                    <div className="divide-y divide-[#e2e2e2]/60">
-                      {tempBuilderTemplate.columns.map((col, idx) => (
-                        <div key={idx} className="py-3 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-3">
-                            <span className="h-2 w-2 rounded-full bg-zinc-400" />
-                            <span className="font-semibold text-[#1a1c1c]">{col} Pipeline Block</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase">0 Cards linked</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-sm max-w-4xl mx-auto overflow-hidden font-sans text-xs">
+                    <table className="w-full border-collapse text-left font-medium text-[#1a1c1c]">
+                      <thead>
+                        <tr className="bg-[#f9f9f9] border-b border-[#e2e2e2] text-[#777777] uppercase tracking-widest text-[9px] font-bold">
+                          <th className="py-3 px-4 font-semibold">Task Name</th>
+                          {columnsConfig.assignee && <th className="py-3 px-3 font-semibold">Assignee</th>}
+                          {columnsConfig.dueDate && <th className="py-3 px-3 font-semibold">Due Date</th>}
+                          {columnsConfig.projects && <th className="py-3 px-3 font-semibold">Projects</th>}
+                          {columnsConfig.tags && <th className="py-3 px-3 font-semibold">Tags</th>}
+                          {columnsConfig.blockedBy && <th className="py-3 px-3 font-semibold">Blocked by</th>}
+                          {columnsConfig.blocking && <th className="py-3 px-3 font-semibold">Blocking</th>}
+                          {columnsConfig.attachments && <th className="py-3 px-4 font-semibold text-right">Attachments</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#e2e2e2]/60">
+                        <tr className="hover:bg-[#f9f9f9]/40 transition-colors">
+                          <td className="py-3 px-4 font-bold">Draft visual campaign styles</td>
+                          {columnsConfig.assignee && (
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-5 w-5 rounded-full bg-zinc-800 text-white flex items-center justify-center font-bold text-[8px]">GU</div>
+                                <span className="font-semibold text-[11px]">Guest User</span>
+                              </div>
+                            </td>
+                          )}
+                          {columnsConfig.dueDate && <td className="py-3 px-3 font-semibold text-zinc-500">June 10</td>}
+                          {columnsConfig.projects && <td className="py-3 px-3 font-semibold text-zinc-500">Creative Brief</td>}
+                          {columnsConfig.tags && (
+                            <td className="py-3 px-3">
+                              <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[8px] font-bold uppercase tracking-wider">marketing</span>
+                            </td>
+                          )}
+                          {columnsConfig.blockedBy && <td className="py-3 px-3 text-zinc-400 font-normal">-</td>}
+                          {columnsConfig.blocking && <td className="py-3 px-3 font-semibold text-zinc-700">Review assets</td>}
+                          {columnsConfig.attachments && (
+                            <td className="py-3 px-4 text-right">
+                              <span className="inline-flex items-center gap-1 text-[9px] text-[#777777] font-semibold bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200"><Upload className="h-2.5 w-2.5" /> brief_styles.pdf</span>
+                            </td>
+                          )}
+                        </tr>
+                        <tr className="hover:bg-[#f9f9f9]/40 transition-colors">
+                          <td className="py-3 px-4 font-bold">Establish QA pipeline framework</td>
+                          {columnsConfig.assignee && (
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[8px]">TL</div>
+                                <span className="font-semibold text-[11px]">Tech Lead</span>
+                              </div>
+                            </td>
+                          )}
+                          {columnsConfig.dueDate && <td className="py-3 px-3 font-semibold text-zinc-500">June 15</td>}
+                          {columnsConfig.projects && <td className="py-3 px-3 font-semibold text-zinc-500">Sprint Plan</td>}
+                          {columnsConfig.tags && (
+                            <td className="py-3 px-3">
+                              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[8px] font-bold uppercase tracking-wider">engineering</span>
+                            </td>
+                          )}
+                          {columnsConfig.blockedBy && <td className="py-3 px-3 font-semibold text-zinc-700">Alpha deploy</td>}
+                          {columnsConfig.blocking && <td className="py-3 px-3 text-zinc-400 font-normal">-</td>}
+                          {columnsConfig.attachments && (
+                            <td className="py-3 px-4 text-right">
+                              <span className="inline-flex items-center gap-1 text-[9px] text-[#777777] font-semibold bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200"><Upload className="h-2.5 w-2.5" /> logs_trace.txt</span>
+                            </td>
+                          )}
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
@@ -1475,21 +1853,56 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
               </div>
             </div>
 
+            {/* RIGHT SIDEBAR: Customize Columns & Info */}
             <aside className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-l border-[#e2e2e2] flex flex-col flex-shrink-0 h-full overflow-y-auto">
               <div className="p-6 space-y-6">
                 <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-[#777777] uppercase tracking-widest">Template Details</h3>
-                  <div className="flex flex-col gap-1">
+                  <h3 className="text-xs font-bold text-[#777777] uppercase tracking-widest text-left">Template Details</h3>
+                  <div className="flex flex-col gap-1 text-left">
                     <label className="text-[10px] font-bold text-[#555] uppercase">Template Name</label>
-                    <input type="text" required value={tempBuilderTemplate.name} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, name: e.target.value })} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none" />
+                    <input type="text" required value={tempBuilderTemplate.name} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, name: e.target.value })} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none text-[#1a1c1c]" />
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 text-left">
                     <label className="text-[10px] font-bold text-[#555] uppercase">Template Description</label>
-                    <textarea value={tempBuilderTemplate.description} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, description: e.target.value })} rows="3" className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs font-normal resize-none" />
+                    <textarea value={tempBuilderTemplate.description} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, description: e.target.value })} rows="2" className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs font-normal resize-none text-[#1a1c1c]" />
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-[#e2e2e2]">
+                {/* Show/Hide Columns Panel */}
+                <div className="space-y-3 pt-4 border-t border-[#e2e2e2] text-left">
+                  <h3 className="text-xs font-bold text-[#777777] uppercase tracking-widest">Customize list columns</h3>
+                  <p className="text-[10px] text-[#777777] leading-normal font-normal">Check default columns to render on sprint cards list previews</p>
+                  <div className="space-y-2 bg-[#f9f9f9] border border-[#e2e2e2] p-3 rounded-xl">
+                    {[
+                      { id: 'assignee', label: 'Assignee' },
+                      { id: 'dueDate', label: 'Due date' },
+                      { id: 'projects', label: 'Projects' },
+                      { id: 'tags', label: 'Tags' },
+                      { id: 'blockedBy', label: 'Blocked by' },
+                      { id: 'blocking', label: 'Blocking' },
+                      { id: 'attachments', label: 'Attachments' }
+                    ].map(col => {
+                      const isChecked = columnsConfig[col.id];
+                      return (
+                        <div 
+                          key={col.id} 
+                          onClick={() => setColumnsConfig(prev => ({ ...prev, [col.id]: !prev[col.id] }))}
+                          className="flex items-center gap-2 cursor-pointer select-none py-0.5 hover:text-black transition-colors"
+                        >
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked} 
+                            onChange={() => {}} 
+                            className="accent-black h-3.5 w-3.5 pointer-events-none rounded" 
+                          />
+                          <span className="text-xs font-semibold text-zinc-700">{col.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-[#e2e2e2] text-left">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-[#777777] uppercase tracking-widest">Active views (Tabs)</h3>
                     <span className="text-[10px] text-zinc-400 font-bold uppercase">{tempBuilderTemplate.activeTabs.length} active</span>
@@ -1499,7 +1912,7 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       const isActive = tempBuilderTemplate.activeTabs.includes(tab);
                       return (
                         <button key={tab} type="button" onClick={() => handleBuilderToggleTab(tab)} className={`p-2 rounded-lg border text-left flex items-center justify-between transition-all ${
-                          isActive ? 'bg-zinc-100 border-[#2d2e30] text-[#1a1c1c] font-bold' : 'bg-white border-[#e2e2e2] text-[#777777]'
+                          isActive ? 'bg-zinc-100 border-[#2d2e30] text-[#1a1c1c] font-bold' : 'bg-white border-[#e2e2e2] text-[#777777] hover:border-black'
                         }`}>
                           <span className="text-xs">{tab}</span>
                           <span className={`h-2 w-2 rounded-full ${isActive ? 'bg-[#2d2e30]' : 'bg-transparent border border-zinc-300'}`} />
@@ -1509,11 +1922,11 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-[#e2e2e2]">
+                <div className="space-y-4 pt-4 border-t border-[#e2e2e2] text-left">
                   <h3 className="text-xs font-bold text-[#777777] uppercase tracking-widest">Template Permissions</h3>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider flex items-center gap-1"><Lock className="h-3 w-3" /> Who can use this template</label>
-                    <select value={tempBuilderTemplate.whoCanUse} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, whoCanUse: e.target.value })} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs font-bold focus:bg-white">
+                    <select value={tempBuilderTemplate.whoCanUse} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, whoCanUse: e.target.value })} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs font-bold focus:bg-white text-[#1a1c1c] outline-none">
                       <option value="Anyone in organization">Anyone in organization</option>
                       <option value="Invite-only workspace members">Invite-only workspace members</option>
                       <option value="Admins & owners only">Admins & owners only</option>
@@ -1521,7 +1934,7 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider flex items-center gap-1"><Edit3 className="h-3 w-3" /> Editor Permissions</label>
-                    <select value={tempBuilderTemplate.whoCanEdit} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, whoCanEdit: e.target.value })} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs font-bold focus:bg-white">
+                    <select value={tempBuilderTemplate.whoCanEdit} onChange={(e) => setTempBuilderTemplate({ ...tempBuilderTemplate, whoCanEdit: e.target.value })} className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs font-bold focus:bg-white text-[#1a1c1c] outline-none">
                       <option value="Anyone with access">Anyone with access can edit</option>
                       <option value="Only template owners">Only template owners can edit</option>
                     </select>
@@ -1676,9 +2089,57 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                         )}
 
                         {blockId === 'narrative' && (
-                          <div>
+                          <div className="relative text-left">
+                            {focusedNarrativeField === 'narrative' && (
+                              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md text-white rounded-lg shadow-xl px-2 py-1 flex items-center gap-1.5 animate-bounce-in z-30 font-sans select-none">
+                                {[
+                                  { id: 'bold', label: 'B', title: 'Bold' },
+                                  { id: 'italic', label: 'I', title: 'Italic' },
+                                  { id: 'underline', label: 'U', title: 'Underline' },
+                                  { id: 'strike', label: 'S', title: 'Strikethrough' },
+                                  { id: 'list-bullet', label: '• List', title: 'Bullet list' },
+                                  { id: 'list-number', label: '1. List', title: 'Numbered list' },
+                                  { id: 'code', label: '<>', title: 'Code block' },
+                                  { id: 'link', label: 'Link', title: 'Insert link' }
+                                ].map(btn => {
+                                  const isActive = simulatedRichTextFormat[btn.id];
+                                  return (
+                                    <button
+                                      key={btn.id}
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault(); // prevents textarea from losing focus!
+                                        setSimulatedRichTextFormat(prev => ({ ...prev, [btn.id]: !prev[btn.id] }));
+                                      }}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                                        isActive ? 'bg-white/30 text-white' : 'hover:bg-white/10 text-neutral-300'
+                                      }`}
+                                      title={btn.title}
+                                    >
+                                      {btn.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
                             <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Narrative Summary Report</span>
-                            <textarea disabled className="w-full bg-white border border-[#e2e2e2] p-3 rounded-lg text-xs leading-relaxed resize-none h-24" value="[Draft Narrative Outline]\n• Key achievements this reporting cycle:\n• Core roadblocks & sprint blockers:\n• Focus items for subsequent sprint execution:" />
+                            <textarea 
+                              onFocus={() => setFocusedNarrativeField('narrative')}
+                              onBlur={() => setFocusedNarrativeField(null)}
+                              className={`w-full bg-white border border-[#e2e2e2] p-3 rounded-lg text-xs leading-relaxed resize-none h-24 focus:outline-none focus:border-black transition-all ${
+                                simulatedRichTextFormat.bold ? 'font-bold' : ''
+                              } ${
+                                simulatedRichTextFormat.italic ? 'italic' : ''
+                              } ${
+                                simulatedRichTextFormat.underline ? 'underline' : ''
+                              } ${
+                                simulatedRichTextFormat.strike ? 'line-through' : ''
+                              } ${
+                                simulatedRichTextFormat.code ? 'font-mono bg-neutral-50 border-neutral-300' : ''
+                              }`} 
+                              defaultValue="[Draft Narrative Outline]&#10;• Key achievements this reporting cycle:&#10;• Core roadblocks & sprint blockers:&#10;• Focus items for subsequent sprint execution:" 
+                            />
                           </div>
                         )}
 
@@ -1827,7 +2288,7 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                     <option value="Public in organization">Public in organization</option>
                     <option value="Shared with Managers">Shared with Managers</option>
                     <option value="Private report channel">Private report channel</option>
-                  </select>
+</select>
                 </div>
               </div>
             </aside>
@@ -1867,15 +2328,56 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
             
             {/* LEFT CANVAS: Interactive Mock form view simulator */}
             <div className="flex-1 p-8 bg-[#f5f6f8] overflow-y-auto">
+              
+              {/* Alert Warning Banner */}
+              <div className="max-w-2xl mx-auto bg-amber-50 border border-amber-200 text-amber-800 p-4 text-left rounded-xl mb-4 font-semibold text-[11px] flex items-start gap-2.5 select-none leading-relaxed">
+                <span className="p-0.5 bg-amber-200 text-amber-800 rounded-full font-bold h-4.5 w-4.5 flex items-center justify-center text-[10px] flex-shrink-0">!</span>
+                <div>
+                  <span className="font-bold">Trial Workspace Warning:</span> Only other users in your Asana instance will be able to see your Form during your free trial. You can configure sharing settings in the right tab.
+                </div>
+              </div>
+
               <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-[#e2e2e2] shadow-lg overflow-hidden flex flex-col">
                 
-                {/* Form header branding */}
-                <div className="h-32 bg-gradient-to-r from-zinc-700 via-neutral-800 to-zinc-900 text-white p-8 flex flex-col justify-end">
-                  <span className="text-[9px] text-[#c5c6c7] font-bold uppercase tracking-widest">Intake Questionnaire</span>
-                  <h2 className="text-xl font-bold tracking-tight mt-0.5">{tempFormDesigner.name}</h2>
-                  {tempFormDesigner.description && (
-                    <p className="text-[10px] text-zinc-300 font-medium truncate mt-1 leading-normal">{tempFormDesigner.description}</p>
-                  )}
+                {/* Form header branding Cover Image placeholder */}
+                <div className="bg-neutral-50 border-b border-[#e2e2e2] p-4 flex items-center justify-center gap-3">
+                  <div className="w-full h-32 rounded-xl bg-zinc-100 border border-dashed border-zinc-300 flex flex-col items-center justify-center gap-2 group hover:bg-zinc-200/50 hover:border-zinc-400 transition-all cursor-pointer">
+                    <Upload className="h-5 w-5 text-zinc-400" />
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Add Cover Image</span>
+                    <span className="text-[9px] text-zinc-400 font-normal">Recommending 1200 x 300 grayscale banner</span>
+                  </div>
+                </div>
+
+                {/* Form Configuration row */}
+                <div className="p-4 bg-[#fafafa] border-b border-[#e2e2e2] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Configure Form Questions</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setIsAddedToFormModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#e2e2e2] hover:border-black bg-white text-xs font-bold transition-all text-[#1a1c1c] cursor-pointer"
+                  >
+                    <span>Fields {tempFormDesigner.fields.length} &gt;</span>
+                  </button>
+                </div>
+
+                {/* Editable Title & description header card */}
+                <div className="p-6 border-b border-[#e2e2e2] space-y-3 bg-[#fafafa]">
+                  <input
+                    type="text"
+                    value={tempFormDesigner.name}
+                    onChange={(e) => setTempFormDesigner({ ...tempFormDesigner, name: e.target.value })}
+                    className="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2 text-sm font-bold text-[#1a1c1c] focus:bg-white focus:border-black outline-none transition-all"
+                    placeholder="Form Title"
+                  />
+                  <textarea
+                    value={tempFormDesigner.description || ''}
+                    onChange={(e) => setTempFormDesigner({ ...tempFormDesigner, description: e.target.value })}
+                    rows="2"
+                    className="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs text-[#777777] font-normal leading-relaxed focus:bg-white focus:border-black outline-none resize-none transition-all"
+                    placeholder="Add form description or instruction guidelines for request submitters..."
+                  />
                 </div>
 
                 {/* Form Fields display or success state */}
@@ -2180,6 +2682,34 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       </select>
                     </div>
 
+                    {/* Destination Section */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Destination Task Section</label>
+                      <select
+                        value={tempFormDesigner.targetSection || 'Backlog'}
+                        onChange={(e) => setTempFormDesigner({ ...tempFormDesigner, targetSection: e.target.value })}
+                        className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs font-bold text-[#1a1c1c] focus:bg-white"
+                      >
+                        <option value="Backlog">Backlog / Incoming Queue</option>
+                        <option value="Sprint Board">Active Development Column</option>
+                        <option value="Verification">QA / Audit Section</option>
+                        <option value="Complete">Completed Actions Archive</option>
+                      </select>
+                    </div>
+
+                    {/* Task Title Field Option */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Map Task Title From</label>
+                      <select
+                        value={tempFormDesigner.titleFieldSource || 'default'}
+                        onChange={(e) => setTempFormDesigner({ ...tempFormDesigner, titleFieldSource: e.target.value })}
+                        className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs font-bold text-[#1a1c1c] focus:bg-white"
+                      >
+                        <option value="default">Submission Subject Name (Default)</option>
+                        <option value="custom">Autogenerate "[Request] + Subject"</option>
+                      </select>
+                    </div>
+
                     {/* Default Assignee */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider flex items-center gap-1">
@@ -2197,16 +2727,111 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       </select>
                     </div>
 
+                    {/* Copy all responses to description toggle */}
+                    <div className="flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg">
+                      <div className="flex flex-col text-left pr-2">
+                        <span className="font-bold text-[#1a1c1c] text-[11px]">Copy responses to description</span>
+                        <span className="text-[9px] text-zinc-400">Append all question answers in task description</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setTempFormDesigner(prev => ({ ...prev, copyToDescription: !prev.copyToDescription }))}
+                        className="focus:outline-none"
+                      >
+                        {tempFormDesigner.copyToDescription ? <ToggleRight className="h-8 w-8 text-black" /> : <ToggleLeft className="h-8 w-8 text-zinc-300" />}
+                      </button>
+                    </div>
+
+                    {/* Shareable Link Input */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Shareable Form Link</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={`https://crewflow.com/forms/share/${tempFormDesigner.id}`} 
+                          className="flex-1 bg-[#f3f4f6] border border-[#e2e2e2] rounded-lg px-2 py-1.5 text-[10px] font-mono text-zinc-500"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`https://crewflow.com/forms/share/${tempFormDesigner.id}`);
+                            setRulesToast('Form share link copied to clipboard!');
+                            setTimeout(() => setRulesToast(''), 3000);
+                          }}
+                          className="bg-black hover:bg-neutral-800 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Copy Embed Code iFrame */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Embed in webpage (iFrame)</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={`<iframe src="https://crewflow.com/forms/embed/${tempFormDesigner.id}" width="100%" height="600" frameborder="0"></iframe>`} 
+                          className="flex-1 bg-[#f3f4f6] border border-[#e2e2e2] rounded-lg px-2 py-1.5 text-[10px] font-mono text-zinc-500"
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`<iframe src="https://crewflow.com/forms/embed/${tempFormDesigner.id}" width="100%" height="600" frameborder="0"></iframe>`);
+                            setRulesToast('Form iframe embed code copied!');
+                            setTimeout(() => setRulesToast(''), 3000);
+                          }}
+                          className="bg-black hover:bg-neutral-800 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Custom confirmation text */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Submission Confirmation screen message</label>
                       <textarea
-                        value={tempFormDesigner.confirmText}
+                        value={tempFormDesigner.confirmText || ''}
                         onChange={(e) => setTempFormDesigner({ ...tempFormDesigner, confirmText: e.target.value })}
                         rows="3"
                         placeholder="Confirmation message..."
                         className="w-full bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg px-2.5 py-2 text-xs leading-relaxed"
                       />
+                    </div>
+
+                    {/* Show a button to Add New Request toggle */}
+                    <div className="flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg">
+                      <div className="flex flex-col text-left pr-2">
+                        <span className="font-bold text-[#1a1c1c] text-[11px]">Show 'Add new request'</span>
+                        <span className="text-[9px] text-zinc-400">Display button to submit another brief</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setTempFormDesigner(prev => ({ ...prev, showAddRequestBtn: !prev.showAddRequestBtn }))}
+                        className="focus:outline-none"
+                      >
+                        {tempFormDesigner.showAddRequestBtn ? <ToggleRight className="h-8 w-8 text-black" /> : <ToggleLeft className="h-8 w-8 text-zinc-300" />}
+                      </button>
+                    </div>
+
+                    {/* Add submitters as task collaborators toggle */}
+                    <div className="flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg">
+                      <div className="flex flex-col text-left pr-2">
+                        <span className="font-bold text-[#1a1c1c] text-[11px]">Add submitter as collaborator</span>
+                        <span className="text-[9px] text-zinc-400">Add applicant to followers list automatically</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setTempFormDesigner(prev => ({ ...prev, addCollaborator: !prev.addCollaborator }))}
+                        className="focus:outline-none"
+                      >
+                        {tempFormDesigner.addCollaborator ? <ToggleRight className="h-8 w-8 text-black" /> : <ToggleLeft className="h-8 w-8 text-zinc-300" />}
+                      </button>
                     </div>
 
                   </div>
@@ -2242,17 +2867,38 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
             
             {/* --- A. CUSTOM FIELDS VIEW --- */}
             {view === 'custom-fields' && (
-              <div className="flex flex-col gap-6 max-w-7xl mx-auto">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0">
+              <div className="flex flex-col gap-6 max-w-7xl mx-auto font-sans">
+                {/* Visual Owner Filter active badge */}
+                {fieldOwnerFilter === 'owner' && (
+                  <div className="flex items-center gap-2 bg-[#dbeafe] border border-[#93c5fd] rounded-full px-3 py-1 text-xs font-bold text-[#1e40af] select-none animate-fade-in w-max">
+                    <span>Filter: Owner</span>
+                    <button type="button" onClick={() => setFieldOwnerFilter('all')} className="hover:bg-[#93c5fd]/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0 relative">
                   <div className="flex flex-1 flex-wrap items-center gap-3">
                     <div className="relative flex-1 min-w-[200px] max-w-md">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8a8b8c]" />
                       <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search custom fields..." className="w-full pl-9 pr-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-medium placeholder-[#8a8b8c] bg-[#f9f9f9] focus:outline-none focus:bg-white transition-all" />
                       {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-2.5 hover:bg-[#e2e2e2] rounded p-0.5"><X className="h-3 w-3" /></button>}
                     </div>
+                    
+                    {/* Filter Toggle Trigger */}
+                    <button 
+                      type="button" 
+                      onClick={() => setFieldOwnerFilter(prev => prev === 'all' ? 'owner' : 'all')} 
+                      className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-xs font-semibold transition-colors hover:bg-[#f0f0f0] ${
+                        fieldOwnerFilter === 'owner' ? 'bg-[#dbeafe] border-[#93c5fd] text-[#1e40af]' : 'border-[#e2e2e2] bg-[#f9f9f9] text-[#777777]'
+                      }`}
+                    >
+                      <Sliders className="h-3.5 w-3.5" />
+                      <span>Filter</span>
+                    </button>
+
                     <div className="flex items-center gap-2 border border-[#e2e2e2] rounded-lg px-3 py-2 bg-[#f9f9f9] text-xs font-semibold hover:bg-[#f0f0f0] transition-colors relative">
                       <span className="text-[#777777]">Type:</span>
-                      <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="bg-transparent font-bold outline-none text-[#1a1c1c]">
+                      <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="bg-transparent font-bold outline-none text-[#1a1c1c] cursor-pointer">
                         <option value="all">All types</option>
                         <option value="single-select">Single-select</option>
                         <option value="multi-select">Multi-select</option>
@@ -2263,13 +2909,75 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       </select>
                     </div>
                   </div>
-                  <button onClick={handleOpenCreateModal} className="bg-[#2d2e30] hover:bg-black text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow flex items-center justify-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Create custom field</span>
-                  </button>
+
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        setProjectPickerType(prev => prev === 'fields' ? null : 'fields');
+                        setProjectPickerSearch('');
+                      }} 
+                      className="bg-[#2d2e30] hover:bg-black text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Create field</span>
+                    </button>
+                    {renderProjectPicker('fields', (projName) => {
+                      handleOpenCreateModal();
+                    })}
+                  </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-[#e2e2e2] overflow-hidden shadow-sm">
+                {/* Main Content Area: Show high fidelity empty/filtered states or lists */}
+                {filteredFields.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-sm p-12 text-center flex flex-col items-center justify-center gap-4 min-h-[380px]">
+                    {/* Gorgeous Custom SVG Illustration representing dials/sliders empty state */}
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+                      <rect x="20" y="20" width="80" height="80" rx="12" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                      <line x1="20" y1="60" x2="100" y2="60" stroke="#fca5a5" strokeWidth="1.5" strokeDasharray="4 4" />
+                      <circle cx="50" cy="40" r="12" stroke="#ef4444" strokeWidth="2.5" fill="#fecaca" />
+                      <path d="M50 34V46M44 40H56" stroke="#ef4444" strokeWidth="2" />
+                      <rect x="35" y="70" width="10" height="20" rx="3" fill="#ef4444" />
+                      <rect x="55" y="75" width="10" height="15" rx="3" fill="#fca5a5" />
+                      <rect x="75" y="65" width="10" height="25" rx="3" fill="#fecaca" />
+                    </svg>
+
+                    <h3 className="font-bold text-[#1a1c1c] text-lg">
+                      {fieldOwnerFilter === 'owner' ? "You don't have any custom fields yet" : "No custom fields to show"}
+                    </h3>
+                    <p className="text-[#777777] text-xs max-w-sm leading-relaxed">
+                      Track priority, cost, or anything your team needs to organize work
+                    </p>
+
+                    <div className="flex items-center gap-3 mt-2">
+                      {fieldOwnerFilter === 'owner' && (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setFieldOwnerFilter('all');
+                            setSearchQuery('');
+                            setTypeFilter('all');
+                          }} 
+                          className="px-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-bold text-[#777777] hover:bg-[#f9f9f9] transition-colors shadow-sm"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                      
+                      <div className="relative">
+                        <button 
+                          onClick={() => {
+                            setProjectPickerType(prev => prev === 'fields' ? null : 'fields');
+                            setProjectPickerSearch('');
+                          }} 
+                          className="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                        >
+                          Create field
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] overflow-hidden shadow-sm">
                   <table className="w-full border-collapse text-left text-xs font-medium text-[#1a1c1c]">
                     <thead>
                       <tr className="bg-[#f9f9f9] border-b border-[#e2e2e2] text-[#777777] uppercase tracking-widest text-[9px] font-bold">
@@ -2354,14 +3062,35 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
             {/* --- B. AUTOMATED RULES VIEW --- */}
             {view === 'workflow-rules' && (
-              <div className="flex flex-col gap-6 max-w-7xl mx-auto animate-fade-in">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0 font-sans">
+              <div className="flex flex-col gap-6 max-w-7xl mx-auto font-sans">
+                {/* Visual Owner Filter active badge */}
+                {ruleOwnerFilter === 'owner' && (
+                  <div className="flex items-center gap-2 bg-[#dbeafe] border border-[#93c5fd] rounded-full px-3 py-1 text-xs font-bold text-[#1e40af] select-none animate-fade-in w-max">
+                    <span>Filter: Owner</span>
+                    <button type="button" onClick={() => setRuleOwnerFilter('all')} className="hover:bg-[#93c5fd]/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0 relative">
                   <div className="flex flex-1 flex-wrap items-center gap-3 text-xs">
                     <div className="relative flex-1 min-w-[200px] max-w-md">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8a8b8c]" />
                       <input type="text" value={ruleSearchQuery} onChange={(e) => setRuleSearchQuery(e.target.value)} placeholder="Search automated rules..." className="w-full pl-9 pr-4 py-2 border border-[#e2e2e2] rounded-lg font-medium bg-[#f9f9f9] focus:outline-none transition-all text-[#1a1c1c]" />
                       {ruleSearchQuery && <button onClick={() => setRuleSearchQuery('')} className="absolute right-2.5 top-2.5 hover:bg-[#e2e2e2] p-0.5 rounded"><X className="h-3 w-3" /></button>}
                     </div>
+
+                    {/* Filter Toggle Trigger */}
+                    <button 
+                      type="button" 
+                      onClick={() => setRuleOwnerFilter(prev => prev === 'all' ? 'owner' : 'all')} 
+                      className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-xs font-semibold transition-colors hover:bg-[#f0f0f0] ${
+                        ruleOwnerFilter === 'owner' ? 'bg-[#dbeafe] border-[#93c5fd] text-[#1e40af]' : 'border-[#e2e2e2] bg-[#f9f9f9] text-[#777777]'
+                      }`}
+                    >
+                      <Sliders className="h-3.5 w-3.5" />
+                      <span>Filter</span>
+                    </button>
+
                     <div className="flex items-center gap-2 border border-[#e2e2e2] rounded-lg px-3 py-2 bg-[#f9f9f9] font-semibold cursor-pointer hover:bg-[#f0f0f0]">
                       <span className="text-[#777777]">Status:</span>
                       <select value={ruleFilter} onChange={(e) => setRuleFilter(e.target.value)} className="bg-transparent font-bold outline-none cursor-pointer">
@@ -2370,20 +3099,90 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                         <option value="inactive">Paused rules</option>
                       </select>
                     </div>
+
+                    {/* Highly interactive 8 Asana Sort options */}
                     <div className="flex items-center gap-2 border border-[#e2e2e2] rounded-lg px-3 py-2 bg-[#f9f9f9] font-semibold cursor-pointer hover:bg-[#f0f0f0]">
                       <ArrowUpDown className="h-3.5 w-3.5 text-[#777777]" />
                       <span className="text-[#777777]">Sort:</span>
                       <select value={ruleSort} onChange={(e) => setRuleSort(e.target.value)} className="bg-transparent font-bold outline-none cursor-pointer">
                         <option value="triggers">Most triggered</option>
                         <option value="alphabetical">Alphabetical</option>
-                        <option value="newest">Newest first</option>
+                        <option value="newest">Creation time (Newest)</option>
+                        <option value="oldest">Creation time (Oldest)</option>
+                        <option value="modified-newest">Last modified (Newest)</option>
+                        <option value="modified-oldest">Last modified (Oldest)</option>
+                        <option value="active-newest">Last active (Newest)</option>
+                        <option value="active-oldest">Last active (Oldest)</option>
                       </select>
                     </div>
                   </div>
-                  <button onClick={() => setIsCreateRuleOpen(true)} className="bg-black hover:bg-neutral-800 text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow transition-colors flex items-center justify-center gap-2"><Plus className="h-4 w-4" /><span>Create rule</span></button>
+                  
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        setProjectPickerType(prev => prev === 'rules' ? null : 'rules');
+                        setProjectPickerSearch('');
+                      }} 
+                      className="bg-black hover:bg-neutral-800 text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Create rule</span>
+                    </button>
+                    {renderProjectPicker('rules', (projName) => {
+                      setIsCreateRuleOpen(true);
+                    })}
+                  </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-[#e2e2e2] overflow-hidden shadow-sm font-sans text-xs">
+                {filteredRules.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-sm p-12 text-center flex flex-col items-center justify-center gap-4 min-h-[380px]">
+                    {/* SVG loop and lightning bolts for rules empty state */}
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+                      <rect x="25" y="25" width="70" height="70" rx="10" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                      <path d="M45 60C45 51.7157 51.7157 45 60 45C68.2843 45 75 51.7157 75 60C75 68.2843 68.2843 75 60 75" stroke="#ef4444" strokeWidth="2" strokeDasharray="3 3" />
+                      <circle cx="60" cy="60" r="14" fill="#fee2e2" stroke="#ef4444" strokeWidth="2" />
+                      <path d="M60 52L54 61H60L59 68L66 59H60L60 52Z" fill="#ef4444" />
+                      <rect x="20" y="45" width="10" height="10" rx="2" fill="#ef4444" />
+                      <rect x="90" y="45" width="10" height="10" rx="2" fill="#ef4444" />
+                    </svg>
+
+                    <h3 className="font-bold text-[#1a1c1c] text-lg">
+                      {ruleOwnerFilter === 'owner' ? "You don't have any rules yet" : "No rules to show"}
+                    </h3>
+                    <p className="text-[#777777] text-xs max-w-sm leading-relaxed">
+                      Automate routine work to keep work moving faster
+                    </p>
+
+                    <div className="flex items-center gap-3 mt-2">
+                      {ruleOwnerFilter === 'owner' && (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setRuleOwnerFilter('all');
+                            setRuleSearchQuery('');
+                            setRuleFilter('all');
+                          }} 
+                          className="px-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-bold text-[#777777] hover:bg-[#f9f9f9] transition-colors shadow-sm"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                      
+                      <div className="relative">
+                        <button 
+                          onClick={() => {
+                            setProjectPickerType(prev => prev === 'rules' ? null : 'rules');
+                            setProjectPickerSearch('');
+                          }} 
+                          className="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                        >
+                          Create rule
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] overflow-hidden shadow-sm font-sans text-xs">
                   <table className="w-full border-collapse text-left text-xs font-medium text-[#1a1c1c]">
                     <thead>
                       <tr className="bg-[#f9f9f9] border-b border-[#e2e2e2] text-[#777777] uppercase tracking-widest text-[9px] font-bold">
@@ -2456,6 +3255,14 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
             {view === 'workflow-forms' && (
               <div className="flex flex-col gap-6 max-w-7xl mx-auto animate-fade-in font-sans">
                 
+                {/* Visual Owner Filter active badge */}
+                {formOwnerFilter === 'owner' && (
+                  <div className="flex items-center gap-2 bg-[#dbeafe] border border-[#93c5fd] rounded-full px-3 py-1 text-xs font-bold text-[#1e40af] select-none animate-fade-in w-max">
+                    <span>Filter: Owner</span>
+                    <button type="button" onClick={() => setFormOwnerFilter('all')} className="hover:bg-[#93c5fd]/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                  </div>
+                )}
+
                 {/* Action bar */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0 text-xs">
                   
@@ -2473,6 +3280,18 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       />
                       {formSearchQuery && <button onClick={() => setFormSearchQuery('')} className="absolute right-2.5 top-2.5 hover:bg-[#e2e2e2] p-0.5 rounded"><X className="h-3 w-3" /></button>}
                     </div>
+
+                    {/* Filter Toggle Trigger */}
+                    <button 
+                      type="button" 
+                      onClick={() => setFormOwnerFilter(prev => prev === 'all' ? 'owner' : 'all')} 
+                      className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-xs font-semibold transition-colors hover:bg-[#f0f0f0] ${
+                        formOwnerFilter === 'owner' ? 'bg-[#dbeafe] border-[#93c5fd] text-[#1e40af]' : 'border-[#e2e2e2] bg-[#f9f9f9] text-[#777777]'
+                      }`}
+                    >
+                      <Sliders className="h-3.5 w-3.5" />
+                      <span>Filter</span>
+                    </button>
 
                     {/* Filter Status */}
                     <div className="relative">
@@ -2570,7 +3389,10 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                   {/* Right Action */}
                   <div className="relative flex items-center">
                     <button
-                      onClick={handleOpenCreateFormModal}
+                      onClick={() => {
+                        setProjectPickerType(prev => prev === 'forms' ? null : 'forms');
+                        setProjectPickerSearch('');
+                      }}
                       className="bg-[#2d2e30] hover:bg-black text-white text-xs font-bold tracking-wider uppercase pl-4 pr-3 py-2.5 rounded-l-lg shadow transition-colors flex items-center gap-1.5 border-r border-neutral-700 animate-fade-in animate-duration-300"
                     >
                       <Plus className="h-4 w-4" />
@@ -2596,7 +3418,10 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                           
                           <button
                             type="button"
-                            onClick={handleOpenCreateFormModal}
+                            onClick={() => {
+                              setProjectPickerType(prev => prev === 'forms' ? null : 'forms');
+                              setProjectPickerSearch('');
+                            }}
                             className="w-full text-left p-2 hover:bg-[#f3f4f6] rounded-lg flex items-start gap-2.5 transition-colors text-xs font-semibold text-[#1a1c1c]"
                           >
                             <div className="p-1 rounded bg-[#fafafa] border border-[#e2e2e2] text-zinc-600"><Plus className="h-4 w-4" /></div>
@@ -2633,35 +3458,79 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                         </div>
                       </>
                     )}
+
+                    {renderProjectPicker('forms', (projName) => {
+                      setNewFormProject(projName);
+                      setNewFormScope(projectPickerPermission);
+                      handleOpenCreateFormModal();
+                    })}
                   </div>
 
                 </div>
 
-                {/* Forms grid tables */}
-                <div className="bg-white rounded-xl border border-[#e2e2e2] overflow-hidden shadow-sm text-xs text-left">
-                  <table className="w-full border-collapse text-left text-xs font-medium text-[#1a1c1c]">
-                    <thead>
-                      <tr className="bg-[#f9f9f9] border-b border-[#e2e2e2] text-[#777777] uppercase tracking-widest text-[9px] font-bold">
-                        <th className="py-4 px-6 font-semibold w-4/12">Intake Form Details</th>
-                        <th className="py-4 px-4 font-semibold w-3/12">Feeds Project Board</th>
-                        <th className="py-4 px-4 font-semibold w-2/12 text-center">Submissions</th>
-                        <th className="py-4 px-4 font-semibold w-2/12 text-center">Public Link status</th>
-                        <th className="py-4 px-6 font-semibold w-1/12 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#e2e2e2]/60">
-                      {filteredForms.length === 0 ? (
-                        <tr>
-                          <td colSpan="5" className="py-12 text-center text-[#777777] italic bg-[#fafafa]">
-                            <div className="flex flex-col items-center gap-2 py-4">
-                              <ClipboardList className="h-8 w-8 text-[#c5c6c7] stroke-[1.5px]" />
-                              <span>No intake questionnaires matching your filters.</span>
-                              <button onClick={() => { setFormSearchQuery(''); setFormFilter('all'); setFormSort('submissions'); }} className="text-xs font-bold underline text-black mt-1">Reset</button>
-                            </div>
-                          </td>
+                {/* Forms grid tables / Empty State */}
+                {filteredForms.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-sm p-12 text-center flex flex-col items-center justify-center gap-4 min-h-[380px] font-sans">
+                    {/* Gorgeous Custom SVG Illustration representing clipboard/magnifying glass empty state */}
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+                      <rect x="25" y="20" width="70" height="80" rx="8" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                      <rect x="45" y="12" width="30" height="10" rx="3" stroke="#fca5a5" strokeWidth="2" fill="white" />
+                      <line x1="40" y1="40" x2="80" y2="40" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="40" y1="55" x2="70" y2="55" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="40" y1="70" x2="60" y2="70" stroke="#fca5a5" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="75" cy="75" r="15" fill="white" stroke="#ef4444" strokeWidth="2.5" />
+                      <line x1="85" y1="85" x2="98" y2="98" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+
+                    <h3 className="font-bold text-[#1a1c1c] text-lg">
+                      {formOwnerFilter === 'owner' ? "You don't have any forms yet" : "No forms to show"}
+                    </h3>
+                    <p className="text-[#777777] text-xs max-w-sm leading-relaxed">
+                      Collect requests and automatically turn submissions into tasks
+                    </p>
+
+                    <div className="flex items-center gap-3 mt-2">
+                      {formOwnerFilter === 'owner' && (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setFormOwnerFilter('all');
+                            setFormSearchQuery('');
+                            setFormFilter('all');
+                          }} 
+                          className="px-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-bold text-[#777777] hover:bg-[#f9f9f9] transition-colors shadow-sm"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                      
+                      <div className="relative">
+                        <button 
+                          onClick={() => {
+                            setProjectPickerType(prev => prev === 'forms' ? null : 'forms');
+                            setProjectPickerSearch('');
+                          }} 
+                          className="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                        >
+                          Create form
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] overflow-hidden shadow-sm text-xs text-left">
+                    <table className="w-full border-collapse text-left text-xs font-medium text-[#1a1c1c]">
+                      <thead>
+                        <tr className="bg-[#f9f9f9] border-b border-[#e2e2e2] text-[#777777] uppercase tracking-widest text-[9px] font-bold">
+                          <th className="py-4 px-6 font-semibold w-4/12">Intake Form Details</th>
+                          <th className="py-4 px-4 font-semibold w-3/12">Feeds Project Board</th>
+                          <th className="py-4 px-4 font-semibold w-2/12 text-center">Submissions</th>
+                          <th className="py-4 px-4 font-semibold w-2/12 text-center">Public Link status</th>
+                          <th className="py-4 px-6 font-semibold w-1/12 text-right">Actions</th>
                         </tr>
-                      ) : (
-                        filteredForms.map(form => (
+                      </thead>
+                      <tbody className="divide-y divide-[#e2e2e2]/60">
+                        {filteredForms.map(form => (
                           <tr key={form.id} className="hover:bg-[#f9f9f9]/40 transition-colors">
                             
                             {/* Form Details */}
@@ -2754,17 +3623,17 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                             </td>
 
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                  
-                  {/* Footer stats */}
-                  <div className="px-6 py-4 bg-[#f9f9f9] border-t border-[#e2e2e2] flex items-center justify-between text-[#777777] text-[10px] font-bold uppercase tracking-wider">
-                    <span>Showing {filteredForms.length} of {forms.length} available forms</span>
-                    <span>Total dynamic records: {forms.reduce((acc, curr) => acc + curr.submissionsCount, 0)} entries</span>
+                        ))}
+                      </tbody>
+                    </table>
+                    
+                    {/* Footer stats */}
+                    <div className="px-6 py-4 bg-[#f9f9f9] border-t border-[#e2e2e2] flex items-center justify-between text-[#777777] text-[10px] font-bold uppercase tracking-wider">
+                      <span>Showing {filteredForms.length} of {forms.length} available forms</span>
+                      <span>Total dynamic records: {forms.reduce((acc, curr) => acc + curr.submissionsCount, 0)} entries</span>
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
             )}
@@ -2993,14 +3862,36 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
             )}
             {/* --- E. PROJECT TEMPLATES VIEW --- */}
             {view === 'workflow-templates' && (
-              <div className="flex flex-col gap-6 max-w-7xl mx-auto">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0">
+              <div className="flex flex-col gap-6 max-w-7xl mx-auto font-sans text-xs">
+                
+                {/* Visual Owner Filter active badge */}
+                {templateOwnerFilter === 'owner' && (
+                  <div className="flex items-center gap-2 bg-[#dbeafe] border border-[#93c5fd] rounded-full px-3 py-1 text-xs font-bold text-[#1e40af] select-none animate-fade-in w-max">
+                    <span>Filter: Owner</span>
+                    <button type="button" onClick={() => setTemplateOwnerFilter('all')} className="hover:bg-[#93c5fd]/50 rounded-full p-0.5"><X className="h-3 w-3" /></button>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0 relative">
                   <div className="flex flex-1 flex-wrap items-center gap-3">
                     <div className="relative flex-1 min-w-[200px] max-w-md">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8a8b8c]" />
                       <input type="text" value={templateSearchQuery} onChange={(e) => setTemplateSearchQuery(e.target.value)} placeholder="Search project templates..." className="w-full pl-9 pr-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-medium placeholder-[#8a8b8c] bg-[#f9f9f9] focus:outline-none transition-all" />
                       {templateSearchQuery && <button onClick={() => setTemplateSearchQuery('')} className="absolute right-2.5 top-2.5 hover:bg-[#e2e2e2] rounded p-0.5"><X className="h-3 w-3" /></button>}
                     </div>
+
+                    {/* Filter Toggle Trigger */}
+                    <button 
+                      type="button" 
+                      onClick={() => setTemplateOwnerFilter(prev => prev === 'all' ? 'owner' : 'all')} 
+                      className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-xs font-semibold transition-colors hover:bg-[#f0f0f0] ${
+                        templateOwnerFilter === 'owner' ? 'bg-[#dbeafe] border-[#93c5fd] text-[#1e40af]' : 'border-[#e2e2e2] bg-[#f9f9f9] text-[#777777]'
+                      }`}
+                    >
+                      <Sliders className="h-3.5 w-3.5" />
+                      <span>Filter</span>
+                    </button>
+
                     <div className="flex items-center gap-2 border border-[#e2e2e2] rounded-lg px-3 py-2 bg-[#f9f9f9] text-xs font-semibold cursor-pointer hover:bg-[#f0f0f0] transition-colors relative">
                       <span className="text-[#777777]">Scope:</span>
                       <select value={templateFilter} onChange={(e) => setTemplateFilter(e.target.value)} className="bg-transparent font-bold outline-none text-[#1a1c1c]">
@@ -3011,23 +3902,108 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       </select>
                     </div>
                   </div>
-                  <button onClick={handleOpenCreateTemplateModal} className="bg-black hover:bg-neutral-800 text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow flex items-center justify-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Create template</span>
-                  </button>
+
+                  {/* Create Button with Dropdown downbar menu */}
+                  <div className="relative flex items-center">
+                    <button 
+                      onClick={() => {
+                        setWizardTitle('Sprint Scrum Plan');
+                        setWizardScope('organization');
+                        setIsProjectTemplateWizardOpen(true);
+                      }} 
+                      className="bg-black hover:bg-neutral-800 text-white text-xs font-bold tracking-wider uppercase pl-4 pr-3 py-2.5 rounded-l-lg shadow flex items-center justify-center gap-1.5 border-r border-neutral-700 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Create template</span>
+                    </button>
+                    <button
+                      onClick={() => setIsCreateDropdownOpen(!isCreateDropdownOpen)}
+                      className="bg-black hover:bg-neutral-800 text-white px-2.5 py-2.5 rounded-r-lg shadow transition-colors flex items-center justify-center cursor-pointer border-l border-neutral-700/30"
+                      title="More Options"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+
+                    {isCreateDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsCreateDropdownOpen(false)} />
+                        <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-[#e2e2e2] rounded-xl shadow-xl z-20 p-1.5 animate-scale-in text-left">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreateDropdownOpen(false);
+                              setWizardTitle('New Board Template');
+                              setWizardScope('organization');
+                              setIsProjectTemplateWizardOpen(true);
+                            }}
+                            className="w-full text-left p-2 hover:bg-[#f3f4f6] rounded-lg text-xs font-semibold text-[#1a1c1c]"
+                          >
+                            Create project template
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreateDropdownOpen(false);
+                              alert('Redirecting to the global Asana project templates gallery browse ledger.');
+                            }}
+                            className="w-full text-left p-2 hover:bg-[#f3f4f6] rounded-lg text-xs font-semibold text-[#1a1c1c] border-t border-[#e2e2e2]/60 mt-1"
+                          >
+                            Browse templates
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredTemplates.length === 0 ? (
-                    <div className="col-span-2 py-12 text-center text-[#777777] bg-white rounded-xl border border-[#e2e2e2] italic">
-                      <div className="flex flex-col items-center gap-2 py-4">
-                        <Copy className="h-8 w-8 text-[#c5c6c7]" />
-                        <span>No project templates matching your query.</span>
-                        <button onClick={() => { setTemplateSearchQuery(''); setTemplateFilter('all'); }} className="text-xs font-bold underline text-black mt-1">Reset filters</button>
-                      </div>
+                {filteredTemplates.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-sm p-12 text-center flex flex-col items-center justify-center gap-4 min-h-[380px]">
+                    {/* SVG jigsaw puzzle empty state illustration */}
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+                      <path d="M45 25C40 25 35 30 35 35C35 40 40 40 40 45C40 50 35 50 35 55C35 60 40 65 45 65" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                      <path d="M65 25C70 25 75 30 75 35C75 40 70 40 70 45C70 50 75 50 75 55C75 60 70 65 65 65" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                      <path d="M45 25L65 25" stroke="#fca5a5" strokeWidth="2.5" />
+                      <path d="M45 65L65 65" stroke="#fca5a5" strokeWidth="2.5" />
+                      <path d="M65 45C60 45 55 50 55 55C55 60 60 60 60 65C60 70 55 70 55 75C55 80 60 85 65 85L85 85C90 85 95 80 95 75C95 70 90 70 90 65C90 60 95 60 95 55C95 50 90 45 85 45L65 45Z" stroke="#ef4444" strokeWidth="2.5" fill="#fee2e2" />
+                    </svg>
+
+                    <h3 className="font-bold text-[#1a1c1c] text-lg">
+                      {templateOwnerFilter === 'owner' ? "You don't have any project templates yet" : "No project templates to show"}
+                    </h3>
+                    <p className="text-[#777777] text-xs max-w-sm leading-relaxed">
+                      Help your team start projects faster and stay consistent
+                    </p>
+
+                    <div className="flex items-center gap-3 mt-2">
+                      {templateOwnerFilter === 'owner' && (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setTemplateOwnerFilter('all');
+                            setTemplateSearchQuery('');
+                            setTemplateFilter('all');
+                          }} 
+                          className="px-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-bold text-[#777777] hover:bg-[#f9f9f9] transition-colors shadow-sm"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                      
+                      <button 
+                        onClick={() => {
+                          setWizardTitle('Sprint Scrum Plan');
+                          setWizardScope('organization');
+                          setIsProjectTemplateWizardOpen(true);
+                        }} 
+                        className="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors"
+                      >
+                        Create template
+                      </button>
                     </div>
-                  ) : (
-                    filteredTemplates.map((tmpl) => (
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                    {filteredTemplates.map((tmpl) => (
                       <div key={tmpl.id} className="bg-white rounded-xl border border-[#e2e2e2] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                         <div>
                           <div className="flex items-start justify-between gap-4">
@@ -3074,28 +4050,56 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                           </div>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* --- F. STATUS TEMPLATES VIEW --- */}
             {view === 'workflow-status-templates' && (
-              <div className="flex flex-col gap-6 max-w-7xl mx-auto animate-fade-in">
+              <div className="flex flex-col gap-6 max-w-7xl mx-auto animate-fade-in font-sans text-xs">
+                
+                {/* Asana Horizontal sub-navigation tabs */}
+                <div className="flex border-b border-[#e2e2e2] flex-shrink-0 text-left">
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveStatusTab('Projects')}
+                    className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                      activeStatusTab === 'Projects' ? 'border-black text-black' : 'border-transparent text-[#777777] hover:text-black'
+                    }`}
+                  >
+                    <Kanban className="h-3.5 w-3.5" />
+                    <span>Projects Templates</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveStatusTab('Portfolios')}
+                    className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                      activeStatusTab === 'Portfolios' ? 'border-black text-black' : 'border-transparent text-[#777777] hover:text-black'
+                    }`}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    <span>Portfolios Templates</span>
+                  </button>
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#e2e2e2] shadow-sm flex-shrink-0">
                   <div className="flex flex-1 flex-wrap items-center gap-3">
                     <div className="relative flex-1 min-w-[200px] max-w-md">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#8a8b8c]" />
-                      <input type="text" value={statusSearchQuery} onChange={(e) => setStatusSearchQuery(e.target.value)} placeholder="Search status templates..." className="w-full pl-9 pr-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-medium placeholder-[#8a8b8c] bg-[#f9f9f9] focus:outline-none transition-all" />
+                      <input type="text" value={statusSearchQuery} onChange={(e) => setStatusSearchQuery(e.target.value)} placeholder="Search status templates..." className="w-full pl-9 pr-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-medium placeholder-[#8a8b8c] bg-[#f9f9f9] focus:outline-none transition-all text-[#1a1c1c]" />
                       {statusSearchQuery && <button onClick={() => setStatusSearchQuery('')} className="absolute right-2.5 top-2.5 hover:bg-[#e2e2e2] rounded p-0.5"><X className="h-3 w-3" /></button>}
                     </div>
+
+                    {/* Pre-filled status markers filter dropdown selector */}
                     <div className="flex items-center gap-2 border border-[#e2e2e2] rounded-lg px-3 py-2 bg-[#f9f9f9] text-xs font-semibold cursor-pointer hover:bg-[#f0f0f0] transition-colors relative">
-                      <span className="text-[#777777]">Scope Target:</span>
-                      <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-transparent font-bold cursor-pointer outline-none text-[#1a1c1c]">
-                        <option value="all">All targets</option>
-                        <option value="Project">Project status reports</option>
-                        <option value="Portfolio">Portfolio status reports</option>
+                      <span className="text-[#777777]">Prefilled Status:</span>
+                      <select value={statusTemplateSelection} onChange={(e) => setStatusTemplateSelection(e.target.value)} className="bg-transparent font-bold cursor-pointer outline-none text-[#1a1c1c]">
+                        <option value="On Track">🟢 On Track</option>
+                        <option value="At Risk">🟡 At Risk</option>
+                        <option value="Off Track">🔴 Off Track</option>
+                        <option value="On Hold">⚪ On Hold</option>
                       </select>
                     </div>
                   </div>
@@ -3107,16 +4111,23 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {filteredStatusTemplates.length === 0 ? (
-                    <div className="col-span-3 py-12 text-center text-[#777777] bg-white rounded-xl border border-[#e2e2e2] italic">
-                      <div className="flex flex-col items-center gap-2 py-4">
-                        <FileText className="h-8 w-8 text-[#c5c6c7]" />
-                        <span>No status templates matching your query.</span>
-                        <button onClick={() => { setStatusSearchQuery(''); setStatusFilter('all'); }} className="text-xs font-bold underline text-black mt-1">Reset filters</button>
-                      </div>
+                    <div className="col-span-3 py-12 text-center text-[#777777] bg-white rounded-xl border border-[#e2e2e2] flex flex-col items-center justify-center p-8 gap-4 min-h-[300px]">
+                      {/* Gorgeous Custom SVG Jigsaw empty state */}
+                      <svg width="100" height="100" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+                        <path d="M45 25C40 25 35 30 35 35C35 40 40 40 40 45C40 50 35 50 35 55C35 60 40 65 45 65" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                        <path d="M65 25C70 25 75 30 75 35C75 40 70 40 70 45C70 50 75 50 75 55C75 60 70 65 65 65" stroke="#fca5a5" strokeWidth="2.5" fill="#fff5f5" />
+                        <path d="M45 25L65 25" stroke="#fca5a5" strokeWidth="2.5" />
+                        <path d="M45 65L65 65" stroke="#fca5a5" strokeWidth="2.5" />
+                        <circle cx="60" cy="60" r="14" fill="#fee2e2" stroke="#ef4444" strokeWidth="2" />
+                      </svg>
+                      <h3 className="font-bold text-[#1a1c1c] text-base">You don't have any status update templates yet</h3>
+                      <p className="text-[#777777] text-xs max-w-sm leading-relaxed">
+                        Design weekly or monthly report cards to update squad leads on work velocity
+                      </p>
                     </div>
                   ) : (
                     filteredStatusTemplates.map(st => (
-                      <div key={st.id} className="bg-white rounded-xl border border-[#e2e2e2] p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                      <div key={st.id} className="bg-white rounded-xl border border-[#e2e2e2] p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group text-left">
                         <div>
                           <div className="flex items-start justify-between gap-4 border-b border-[#e2e2e2]/60 pb-3">
                             <div>
@@ -3156,6 +4167,114 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
           </div>
         </>
+      )}
+
+      {/* Forms: Added to form checklist modal */}
+      {isAddedToFormModalOpen && tempFormDesigner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in font-sans">
+          <div className="bg-white w-full max-w-md rounded-xl border border-[#e2e2e2] shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-scale-in text-xs">
+            
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-[#e2e2e2] bg-[#f9f9f9] flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[#1a1c1c] uppercase tracking-wider">Added to form</h3>
+                <p className="text-[10px] text-[#777777] font-semibold uppercase mt-0.5">Toggle questions visible on request form</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsAddedToFormModalOpen(false)} 
+                className="p-1 hover:bg-[#e2e2e2] rounded-lg text-[#777777]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Content List */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 text-left">
+              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Available Intake Parameters</span>
+              
+              <div className="space-y-2">
+                {/* Standard Required parameters */}
+                <div className="flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked disabled className="accent-black h-3.5 w-3.5" />
+                    <div>
+                      <span className="font-bold text-[#1a1c1c] text-xs">Task Name / Subject</span>
+                      <span className="text-[9px] text-zinc-400 block mt-0.5">System Required Parameter</span>
+                    </div>
+                  </div>
+                  <span className="bg-[#e2e2e2] text-zinc-600 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider">Static</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e2e2e2] rounded-lg opacity-60 cursor-not-allowed">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked disabled className="accent-black h-3.5 w-3.5" />
+                    <div>
+                      <span className="font-bold text-[#1a1c1c] text-xs">Operational Description</span>
+                      <span className="text-[9px] text-zinc-400 block mt-0.5">System Required Parameter</span>
+                    </div>
+                  </div>
+                  <span className="bg-[#e2e2e2] text-zinc-600 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider">Static</span>
+                </div>
+
+                {/* Optional parameters checklist */}
+                {[
+                  { id: 'attachment', label: 'Supporting Attachments & Files', desc: 'File uploads specs', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
+                  { id: 'due-date', label: 'Target Delivery Due Date', desc: 'Date picker input', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+                  { id: 'priority', label: 'Priority Urgency Flags', desc: 'Dropdown priority labels', color: 'bg-red-50 border-red-200 text-red-700' },
+                  { id: 'custom-repro-steps', label: 'Reproduction Logs steps', desc: 'Drilldown repro spec textarea', color: 'bg-amber-50 border-amber-200 text-amber-700' },
+                  { id: 'custom-text', label: 'Custom Text field', desc: 'Freeform single-line input', color: 'bg-purple-50 border-purple-200 text-purple-700' },
+                  { id: 'custom-number', label: 'Custom Numeric field', desc: 'Numeric validation input', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' }
+                ].map(opt => {
+                  const isChecked = tempFormDesigner.fields.includes(opt.id);
+                  return (
+                    <div 
+                      key={opt.id}
+                      onClick={() => {
+                        if (isChecked) {
+                          handleFormDesignerRemoveField(opt.id);
+                        } else {
+                          handleFormDesignerAddField(opt.id);
+                        }
+                      }}
+                      className={`flex items-center justify-between p-3 bg-white border rounded-lg cursor-pointer hover:border-black/50 transition-all select-none ${
+                        isChecked ? 'border-zinc-400 bg-zinc-50/50 shadow-2xs' : 'border-[#e2e2e2]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked} 
+                          onChange={() => {}} 
+                          className="accent-black h-3.5 w-3.5 pointer-events-none" 
+                        />
+                        <div>
+                          <span className="font-bold text-[#1a1c1c] text-xs">{opt.label}</span>
+                          <span className="text-[9px] text-zinc-400 block mt-0.5">{opt.desc}</span>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border ${opt.color}`}>
+                        {isChecked ? 'Added' : 'Optional'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[#e2e2e2] bg-[#f9f9f9] flex items-center justify-end flex-shrink-0">
+              <button 
+                type="button" 
+                onClick={() => setIsAddedToFormModalOpen(false)} 
+                className="px-5 py-2 bg-black hover:bg-neutral-800 text-white font-bold uppercase tracking-wider rounded-lg shadow"
+              >
+                Done
+              </button>
+            </div>
+
+          </div>
+        </div>
       )}
 
       {/* --- MODALS & OVERLAYS --- */}
@@ -3343,6 +4462,211 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                 <span>Create & Configure</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Template Wizard Modal */}
+      {isProjectTemplateWizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in font-sans">
+          <div className="bg-white w-full max-w-6xl rounded-2xl border border-[#e2e2e2] shadow-2xl flex flex-col overflow-hidden h-[85vh] animate-scale-in">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-[#e2e2e2] bg-[#f9f9f9] flex items-center justify-between flex-shrink-0">
+              <div>
+                <h3 className="text-sm font-bold text-[#1a1c1c] uppercase tracking-wider">Project Template Creation Wizard</h3>
+                <p className="text-[10px] text-[#777777] font-semibold uppercase mt-0.5">Establish and preview your organizational template live before deployment</p>
+              </div>
+              <button onClick={() => setIsProjectTemplateWizardOpen(false)} className="p-1 hover:bg-[#e2e2e2] rounded-lg text-[#777777]"><X className="h-4 w-4" /></button>
+            </div>
+
+            {/* Content: Left Form / Right Board Preview */}
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+              {/* Left Configuration Panel */}
+              <form onSubmit={handleWizardSubmit} className="w-full md:w-96 bg-[#fcfcfc] border-r border-[#e2e2e2] p-6 overflow-y-auto space-y-5 text-left text-xs flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Template Title</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={wizardTitle} 
+                      onChange={(e) => setWizardTitle(e.target.value)} 
+                      placeholder="e.g. Sprint Backlog & Agile Board" 
+                      className="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:border-black text-[#1a1c1c]" 
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Template Description</label>
+                    <textarea 
+                      value={newTemplateDesc} 
+                      onChange={(e) => setNewTemplateDesc(e.target.value)} 
+                      placeholder="Describe target usage, pipeline phases, or operational guidelines..." 
+                      rows="3" 
+                      className="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs font-normal focus:outline-none focus:border-black text-[#1a1c1c] resize-none" 
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Template Access Scope</label>
+                    <select 
+                      value={wizardScope} 
+                      onChange={(e) => setWizardScope(e.target.value)} 
+                      className="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2.5 text-xs font-bold text-[#1a1c1c] outline-none"
+                    >
+                      <option value="organization">Anyone in organization (Public)</option>
+                      <option value="project-only">Project-scoped (Admins only)</option>
+                      <option value="private">Private (Invite only)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider">Starting Pipeline Preset</label>
+                    <select 
+                      value={newTemplateSource} 
+                      onChange={(e) => setNewTemplateSource(e.target.value)} 
+                      className="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2.5 text-xs font-bold text-[#1a1c1c] outline-none"
+                    >
+                      <option value="scratch">Standard Board (To Do, In Progress, QA, Done)</option>
+                      <option value="scrum">Agile Scrum (Sprint Backlog, Ready, Dev, Review, Done)</option>
+                      <option value="marketing">Campaign Launch (Planning, Design, Approved, Live)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-[#e2e2e2] flex items-center justify-end gap-3 flex-shrink-0">
+                  <button type="button" onClick={() => setIsProjectTemplateWizardOpen(false)} className="px-4 py-2 border border-[#e2e2e2] rounded-lg text-xs font-semibold text-[#777777] hover:bg-[#eaeaea]">Cancel</button>
+                  <button type="submit" disabled={!wizardTitle.trim()} className="px-4 py-2 bg-black hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-bold uppercase rounded-lg shadow flex items-center gap-1">
+                    <span>Create Template</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </form>
+
+              {/* Right Interactive Preview Panel */}
+              <div className="flex-1 bg-[#f5f6f8] flex flex-col min-w-0 overflow-hidden font-sans text-xs">
+                {/* Horizontal Tab Headers */}
+                <div className="bg-white border-b border-[#e2e2e2] px-6 py-2.5 flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center gap-1.5 overflow-x-auto">
+                    {['Overview', 'List', 'Board', 'Timeline', 'Calendar', 'Workflow'].map(tab => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setWizardActiveTab(tab)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                          wizardActiveTab === tab
+                            ? 'bg-[#2d2e30] border-black text-white shadow-xs'
+                            : 'bg-[#f9f9f9] border-[#e2e2e2] text-[#777777] hover:text-black'
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider text-right pr-2">Live Preview Worksheet</span>
+                </div>
+
+                {/* Simulated Content Area */}
+                <div className="flex-1 p-6 overflow-y-auto">
+                  {wizardActiveTab === 'Overview' && (
+                    <div className="bg-white rounded-xl border border-[#e2e2e2] p-6 shadow-sm max-w-2xl mx-auto space-y-5 text-left">
+                      <div className="border-b border-[#e2e2e2]/60 pb-3">
+                        <span className="text-[9px] font-bold text-purple-600 uppercase tracking-widest block">Project Brief</span>
+                        <h4 className="text-base font-bold text-[#1a1c1c] mt-0.5">{wizardTitle || 'Untitled Project Template'}</h4>
+                        <p className="text-xs text-[#777777] font-normal leading-relaxed mt-1">{newTemplateDesc || 'Configure basic descriptive instructions in the left configuration panel.'}</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3.5 bg-zinc-50 rounded-lg border border-zinc-200">
+                          <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest block">Access Scope</span>
+                          <span className="font-semibold text-zinc-700 capitalize text-xs mt-1 block">{wizardScope} Team Scope</span>
+                        </div>
+                        <div className="p-3.5 bg-zinc-50 rounded-lg border border-zinc-200">
+                          <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest block">Preset Roles</span>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {projectRoles.map(r => (
+                              <span key={r} className="px-2 py-0.5 rounded bg-white border border-[#e2e2e2] text-[8px] font-bold text-zinc-500 uppercase tracking-wider">{r}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {wizardActiveTab === 'List' && (
+                    <div className="bg-white rounded-xl border border-[#e2e2e2] shadow-sm max-w-3xl mx-auto overflow-hidden text-left">
+                      <table className="w-full border-collapse font-medium text-[#1a1c1c]">
+                        <thead>
+                          <tr className="bg-[#f9f9f9] border-b border-[#e2e2e2] text-[#777777] uppercase tracking-widest text-[8px] font-bold">
+                            <th className="py-2.5 px-4">Task Name</th>
+                            <th className="py-2.5 px-3">Assignee</th>
+                            <th className="py-2.5 px-3">Due Date</th>
+                            <th className="py-2.5 px-3 text-right">Priority</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#e2e2e2]/60 text-xs">
+                          <tr>
+                            <td className="py-2.5 px-4 font-bold">Draft visual styles layout checklist</td>
+                            <td className="py-2.5 px-3 text-zinc-500 font-semibold">Guest User</td>
+                            <td className="py-2.5 px-3 text-zinc-400">June 10</td>
+                            <td className="py-2.5 px-3 text-right"><span className="px-1.5 py-0.5 rounded bg-red-50 text-red-800 border border-red-200 text-[8px] font-bold uppercase tracking-wider">High</span></td>
+                          </tr>
+                          <tr>
+                            <td className="py-2.5 px-4 font-bold">Establish QA pipeline workspace</td>
+                            <td className="py-2.5 px-3 text-zinc-500 font-semibold">Tech Lead</td>
+                            <td className="py-2.5 px-3 text-zinc-400">June 15</td>
+                            <td className="py-2.5 px-3 text-right"><span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-bold uppercase tracking-wider">Medium</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {wizardActiveTab === 'Board' && (
+                    <div className="flex gap-4 min-h-full items-start">
+                      {(newTemplateSource === 'scrum' 
+                        ? ['Sprint Backlog', 'Dev Pipeline', 'QA Phase', 'Done'] 
+                        : newTemplateSource === 'marketing' 
+                        ? ['Planning', 'Design Room', 'Live Stream', 'Complete'] 
+                        : ['To Do', 'In Progress', 'Done']
+                      ).map(col => (
+                        <div key={col} className="w-60 bg-white/80 rounded-xl border border-[#e2e2e2] p-3 text-left space-y-2 flex-shrink-0 shadow-sm">
+                          <span className="font-bold text-xs text-[#1a1c1c] block border-b border-[#e2e2e2] pb-1.5">{col}</span>
+                          <div className="py-8 text-center text-zinc-400 italic text-[10px]">
+                            Cards appear here
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {wizardActiveTab === 'Timeline' && (
+                    <div className="bg-white rounded-xl border border-[#e2e2e2] p-8 text-center shadow-sm max-w-xl mx-auto flex flex-col items-center gap-3">
+                      <Layout className="h-6 w-6 text-zinc-300" />
+                      <h4 className="font-bold text-[#1a1c1c]">Gantt Timeline Chart</h4>
+                      <p className="text-[10px] text-[#777777] max-w-sm">Simulated timeline bar plots will update dynamically based on dates defined in list entries.</p>
+                    </div>
+                  )}
+
+                  {wizardActiveTab === 'Calendar' && (
+                    <div className="bg-white rounded-xl border border-[#e2e2e2] p-8 text-center shadow-sm max-w-xl mx-auto flex flex-col items-center gap-3">
+                      <Calendar className="h-6 w-6 text-zinc-300" />
+                      <h4 className="font-bold text-[#1a1c1c]">Calendar Grid Planner</h4>
+                      <p className="text-[10px] text-[#777777] max-w-sm">A 30-day monthly grid that renders project cards based on due dates.</p>
+                    </div>
+                  )}
+
+                  {wizardActiveTab === 'Workflow' && (
+                    <div className="bg-white rounded-xl border border-[#e2e2e2] p-8 text-center shadow-sm max-w-xl mx-auto flex flex-col items-center gap-3">
+                      <GitMerge className="h-6 w-6 text-zinc-300" />
+                      <h4 className="font-bold text-[#1a1c1c]">Workflow Pipelines Diagram</h4>
+                      <p className="text-[10px] text-[#777777] max-w-sm">Auto-generate rules nodes, intake form submissions arrows, and status updates checklists.</p>
+                    </div>
+                  )}
+                </div>
+
+              </div>
             </div>
           </div>
         </div>
@@ -4038,6 +5362,110 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                       );
                     })}
 
+                  </div>
+                </div>
+
+                {/* Status Mapper Component */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-[#e2e2e2] text-left">
+                  <label className="text-[10px] font-bold text-[#555] uppercase tracking-wider block">Status Mapper</label>
+                  <span className="text-[9px] text-[#777777] font-semibold block leading-normal">
+                    Create statuses - Define different states or stages for this work using the Active and Done categories
+                  </span>
+                  
+                  <div className="space-y-4 mt-2">
+                    {/* Active Statuses Container */}
+                    <div className="p-3 bg-red-50/40 rounded-xl border border-red-100 space-y-2 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-red-800 uppercase tracking-widest">Active Stages</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newId = `active-${Date.now()}`;
+                            setActiveStatuses(prev => [...prev, { id: newId, label: 'New Active Stage', code: 'A', color: 'amber' }]);
+                          }}
+                          className="text-red-700 hover:text-red-900 font-bold uppercase text-[9px] flex items-center gap-0.5"
+                        >
+                          <Plus className="h-3 w-3" /> Add status option
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                        {activeStatuses.map((st, idx) => (
+                          <div key={st.id} className="flex items-center gap-2 bg-white border border-red-200/80 p-2 rounded-lg shadow-2xs">
+                            <div className="h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-[8px] select-none" title="Active Swatch">
+                              {st.code}
+                            </div>
+                            <input 
+                              type="text" 
+                              required 
+                              value={st.label} 
+                              onChange={(e) => {
+                                const newLabel = e.target.value;
+                                setActiveStatuses(prev => prev.map(item => item.id === st.id ? { ...item, label: newLabel, code: newLabel ? newLabel[0].toUpperCase() : '?' } : item));
+                              }}
+                              placeholder="Status label" 
+                              className="flex-1 bg-transparent text-xs font-semibold text-[#1a1c1c] outline-none border-b border-transparent focus:border-neutral-300" 
+                            />
+                            {activeStatuses.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => setActiveStatuses(prev => prev.filter(item => item.id !== st.id))}
+                                className="text-red-300 hover:text-red-700 p-0.5"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Done Statuses Container */}
+                    <div className="p-3 bg-emerald-50/40 rounded-xl border border-emerald-100 space-y-2 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-emerald-800 uppercase tracking-widest">Done Stages</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newId = `done-${Date.now()}`;
+                            setDoneStatuses(prev => [...prev, { id: newId, label: 'New Completed Stage', code: 'C', color: 'emerald' }]);
+                          }}
+                          className="text-emerald-700 hover:text-emerald-900 font-bold uppercase text-[9px] flex items-center gap-0.5"
+                        >
+                          <Plus className="h-3 w-3" /> Add status option
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                        {doneStatuses.map((st, idx) => (
+                          <div key={st.id} className="flex items-center gap-2 bg-white border border-emerald-200/80 p-2 rounded-lg shadow-2xs">
+                            <div className="h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[8px] select-none" title="Completed Swatch">
+                              {st.code}
+                            </div>
+                            <input 
+                              type="text" 
+                              required 
+                              value={st.label} 
+                              onChange={(e) => {
+                                const newLabel = e.target.value;
+                                setDoneStatuses(prev => prev.map(item => item.id === st.id ? { ...item, label: newLabel, code: newLabel ? newLabel[0].toUpperCase() : '?' } : item));
+                              }}
+                              placeholder="Status label" 
+                              className="flex-1 bg-transparent text-xs font-semibold text-[#1a1c1c] outline-none border-b border-transparent focus:border-neutral-300" 
+                            />
+                            {doneStatuses.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => setDoneStatuses(prev => prev.filter(item => item.id !== st.id))}
+                                className="text-emerald-300 hover:text-emerald-700 p-0.5"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
