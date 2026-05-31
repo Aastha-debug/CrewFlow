@@ -19,6 +19,7 @@ import StrategyResourcingView from './components/StrategyResourcingView';
 import StrategyDashboardView from './components/StrategyDashboardView';
 import PeopleView from './components/PeopleView';
 import TeamView from './components/TeamView';
+import WorkflowView from './components/WorkflowView';
 import { CheckCircle } from 'lucide-react';
 
 function AppContent() {
@@ -203,7 +204,7 @@ function AppContent() {
       );
     }
 
-    if (activeModule !== 'work' && activeModule !== 'strategy' && activeModule !== 'people') {
+    if (activeModule !== 'work' && activeModule !== 'strategy' && activeModule !== 'people' && activeModule !== 'workflow') {
       return (
         <div className="flex-1 flex flex-col items-center justify-center bg-[#f9f9f9] select-none">
           <div className="h-12 w-12 rounded bg-[#e2e2e2] flex items-center justify-center mb-4 text-[#777777]">
@@ -335,6 +336,22 @@ function AppContent() {
             setActiveView={setActiveView}
             projects={projects}
             tasks={tasks}
+            token={token}
+          />
+        );
+      case 'custom-fields':
+      case 'workflow-rules':
+      case 'workflow-forms':
+      case 'workflow-task-types':
+      case 'workflow-templates':
+      case 'workflow-status-templates':
+        return (
+          <WorkflowView 
+            view={activeView}
+            setActiveView={setActiveView}
+            projects={projects}
+            tasks={tasks}
+            onTaskCreated={handleTaskCreated}
             token={token}
           />
         );
