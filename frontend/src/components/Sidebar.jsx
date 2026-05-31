@@ -25,7 +25,8 @@ import {
   Play,
   Layers,
   Copy,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -536,66 +537,6 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                 <nav className="space-y-0.5">
                   <button
                     onClick={() => {
-                      setActiveView('custom-fields');
-                      setActiveProjectId(null);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
-                      activeView === 'custom-fields' 
-                        ? 'bg-[#3b3c3e] text-white' 
-                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
-                    }`}
-                  >
-                    <Sliders className={`h-4 w-4 ${activeView === 'custom-fields' ? 'text-white' : 'text-[#8a8b8c]'}`} />
-                    <span>Custom fields</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveView('workflow-rules');
-                      setActiveProjectId(null);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
-                      activeView === 'workflow-rules' 
-                        ? 'bg-[#3b3c3e] text-white' 
-                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
-                    }`}
-                  >
-                    <Play className={`h-4 w-4 ${activeView === 'workflow-rules' ? 'text-white' : 'text-[#8a8b8c]'}`} />
-                    <span>Automated Rules</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveView('workflow-forms');
-                      setActiveProjectId(null);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
-                      activeView === 'workflow-forms' 
-                        ? 'bg-[#3b3c3e] text-white' 
-                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
-                    }`}
-                  >
-                    <ClipboardList className={`h-4 w-4 ${activeView === 'workflow-forms' ? 'text-white' : 'text-[#8a8b8c]'}`} />
-                    <span>Intake Forms</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveView('workflow-task-types');
-                      setActiveProjectId(null);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
-                      activeView === 'workflow-task-types' 
-                        ? 'bg-[#3b3c3e] text-white' 
-                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
-                    }`}
-                  >
-                    <Layers className={`h-4 w-4 ${activeView === 'workflow-task-types' ? 'text-white' : 'text-[#8a8b8c]'}`} />
-                    <span>Task types</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
                       setActiveView('workflow-templates');
                       setActiveProjectId(null);
                     }}
@@ -620,8 +561,68 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                         : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
                     }`}
                   >
-                    <FileText className={`h-4 w-4 ${activeView === 'workflow-status-templates' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <Activity className={`h-4 w-4 ${activeView === 'workflow-status-templates' ? 'text-white' : 'text-[#8a8b8c]'}`} />
                     <span>Status templates</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveView('custom-fields');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'custom-fields' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Sliders className={`h-4 w-4 ${activeView === 'custom-fields' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Custom fields</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveView('workflow-rules');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'workflow-rules' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Zap className={`h-4 w-4 ${activeView === 'workflow-rules' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Rules</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveView('workflow-forms');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'workflow-forms' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <ClipboardList className={`h-4 w-4 ${activeView === 'workflow-forms' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Forms</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveView('workflow-task-types');
+                      setActiveProjectId(null);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                      activeView === 'workflow-task-types' 
+                        ? 'bg-[#3b3c3e] text-white' 
+                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
+                    }`}
+                  >
+                    <Layers className={`h-4 w-4 ${activeView === 'workflow-task-types' ? 'text-white' : 'text-[#8a8b8c]'}`} />
+                    <span>Task types</span>
                   </button>
                 </nav>
               </>

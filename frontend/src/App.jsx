@@ -391,6 +391,7 @@ function AppContent() {
       
       {/* Sticky Top Grayscale Navbar (Spans full-width, stationary) */}
       <Header 
+        activeModule={activeModule}
         activeView={activeView}
         activeProjectId={activeProjectId}
         projects={projects}

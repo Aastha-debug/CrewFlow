@@ -23,11 +23,11 @@ import {
   CheckSquare,
   MessageSquare,
   Tag,
-  LayoutTemplate,
-  Menu
+  LayoutTemplate
 } from 'lucide-react';
 
 const Header = ({ 
+  activeModule,
   activeView, 
   activeProjectId, 
   projects = [], 
@@ -43,6 +43,18 @@ const Header = ({
 }) => {
   const { user } = useAuth();
   const effectiveUser = user || { email: 'guest@crewflow.com', role: 'Admin', _id: 'guest_id' };
+
+  // Determine active section name label
+  const getSectionLabel = () => {
+    if (!activeModule) return 'Work';
+    const labels = {
+      work: 'Work',
+      strategy: 'Strategy',
+      workflow: 'Workflow',
+      people: 'People'
+    };
+    return labels[activeModule.toLowerCase()] || 'Work';
+  };
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -282,14 +294,6 @@ const Header = ({
       
       {/* Sidebar Toggle, Logo + Brand Name, and Active Section Name */}
       <div className="flex items-center gap-3">
-        {/* Sidebar Toggle Hamburger Button */}
-        <button
-          onClick={onToggleSidebar}
-          className="text-gray-300 hover:text-white hover:bg-white/10 p-1.5 rounded transition-colors flex-shrink-0"
-          title="Toggle Sidebar"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
 
         {/* Brand Group: Logo + Brand Name */}
         <div className="flex items-center gap-2 flex-shrink-0 pr-3.5 border-r border-[#2d2e30] h-8">
@@ -310,7 +314,7 @@ const Header = ({
 
         {/* Active Section Name */}
         <h1 className="text-xs font-bold text-gray-300 tracking-wide uppercase px-2 py-0.5 bg-white/5 border border-white/10 rounded flex-shrink-0">
-          {getViewLabel()}
+          {getSectionLabel()}
         </h1>
       </div>
 

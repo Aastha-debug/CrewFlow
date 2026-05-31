@@ -2235,69 +2235,6 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
                 <p className="text-xs text-[#777777] mt-0.5">Scaffold standardization across all organizational team tasks, automation triggers, custom metadata and status checklists.</p>
               </div>
             </div>
-
-            {/* Horizontal Navigation Tabs */}
-            <div className="flex items-center gap-6 mt-6 border-b border-[#e2e2e2]/60 pb-0 flex-shrink-0">
-              <button 
-                onClick={() => setActiveView('custom-fields')}
-                className={`pb-3 text-xs font-semibold uppercase tracking-wider relative transition-all ${
-                  view === 'custom-fields' ? 'text-black' : 'text-[#777777] hover:text-black'
-                }`}
-              >
-                Custom fields library
-                {view === 'custom-fields' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded" />}
-              </button>
-              
-              <button 
-                onClick={() => setActiveView('workflow-rules')}
-                className={`pb-3 text-xs font-semibold uppercase tracking-wider relative transition-all ${
-                  view === 'workflow-rules' ? 'text-black' : 'text-[#777777] hover:text-black'
-                }`}
-              >
-                Automated Rules
-                {view === 'workflow-rules' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded" />}
-              </button>
-
-              <button 
-                onClick={() => setActiveView('workflow-forms')}
-                className={`pb-3 text-xs font-semibold uppercase tracking-wider relative transition-all ${
-                  view === 'workflow-forms' ? 'text-black' : 'text-[#777777] hover:text-black'
-                }`}
-              >
-                Intake Forms
-                {view === 'workflow-forms' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded" />}
-              </button>
-
-              <button 
-                onClick={() => setActiveView('workflow-task-types')}
-                className={`pb-3 text-xs font-semibold uppercase tracking-wider relative transition-all ${
-                  view === 'workflow-task-types' ? 'text-black' : 'text-[#777777] hover:text-black'
-                }`}
-              >
-                Task types
-                {view === 'workflow-task-types' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded" />}
-              </button>
-
-              <button 
-                onClick={() => setActiveView('workflow-templates')}
-                className={`pb-3 text-xs font-semibold uppercase tracking-wider relative transition-all ${
-                  view === 'workflow-templates' ? 'text-black' : 'text-[#777777] hover:text-black'
-                }`}
-              >
-                Project templates
-                {view === 'workflow-templates' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded" />}
-              </button>
-
-              <button 
-                onClick={() => setActiveView('workflow-status-templates')}
-                className={`pb-3 text-xs font-semibold uppercase tracking-wider relative transition-all ${
-                  view === 'workflow-status-templates' ? 'text-black' : 'text-[#777777] hover:text-black'
-                }`}
-              >
-                Status templates
-                {view === 'workflow-status-templates' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded" />}
-              </button>
-            </div>
           </div>
 
           {/* Main Content Views Router */}
