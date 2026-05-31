@@ -448,7 +448,6 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
 
   // Create Status Template Modal
   const [isCreateStatusModalOpen, setIsCreateStatusModalOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Project' | 'Portfolio'
 
   // Create Status Modal state
   const [isCreateStatusOpen, setIsCreateStatusOpen] = useState(false);
