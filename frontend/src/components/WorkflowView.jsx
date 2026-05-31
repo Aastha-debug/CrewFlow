@@ -2060,9 +2060,6 @@ export default function WorkflowView({ view, setActiveView, projects = [], tasks
               </div>
             </div>
 
-              </div>
-            </div>
-
             {/* RIGHT SIDEBAR: Toolkit & settings */}
             <aside className="w-full md:w-80 bg-white border-l border-[#e2e2e2] flex flex-col h-full overflow-hidden">
               
