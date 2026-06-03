@@ -35,7 +35,7 @@ const TeamView = ({ activeTeamId, setActiveView, projects = [], tasks = [], toke
   const [emailAlias, setEmailAlias] = useState(teamInfo.email);
   const [messagesList, setMessagesList] = useState([
     { id: 1, author: 'guest@crewflow.com', initial: 'GU', bg: 'bg-[#fca5a5] text-[#991b1b]', content: 'Welcome everyone! I have posted our new Grayscale design assets in the Knowledge tab. Please review them for our upcoming sprint kickoff.', date: '3 days ago', comments: 2 },
-    { id: 2, author: 'member@crewflow.com', initial: 'ME', bg: 'bg-[#c084fc] text-[#581c87]', content: 'Just synced the initial bionic reading modes. Let me know if you experience any lag during task rendering checks.', date: '1 day ago', comments: 0 }
+    { id: 2, author: 'guest@crewflow.com', initial: 'GU', bg: 'bg-[#fca5a5] text-[#991b1b]', content: 'I have updated the Q3 roadmap scope definitions. Let me know if anyone has questions about the milestones.', date: 'Yesterday', comments: 1 }
   ]);
   const [newMessage, setNewMessage] = useState('');
 
@@ -58,7 +58,7 @@ const TeamView = ({ activeTeamId, setActiveView, projects = [], tasks = [], toke
   const [knowledgeState, setKnowledgeState] = useState('with-entry'); // 'no-entry' | 'with-entry'
   const [wikis, setWikis] = useState([
     { id: 1, title: 'Grayscale Branding Specifications', desc: 'Outlines standard HSL grayscale colors, fonts (Inter & Outfit), and opacity tokens.', author: 'Guest User', date: 'May 28, 2026' },
-    { id: 2, title: 'Developer Local Setup Protocol', desc: 'Step-by-step guidelines for cloning repositories, configuring mock JWT fallbacks, and starting Vite.', author: 'Member User', date: 'May 29, 2026' }
+    { id: 2, title: 'Security Protocol Checklist', desc: 'Outlines API route protect middleware requirements and environment validation.', author: 'Guest User', date: 'June 01, 2026' }
   ]);
   const [newWikiTitle, setNewWikiTitle] = useState('');
   const [newWikiDesc, setNewWikiDesc] = useState('');

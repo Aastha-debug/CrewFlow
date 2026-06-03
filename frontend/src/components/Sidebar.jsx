@@ -26,9 +26,7 @@ import {
   Layers,
   Copy,
   FileText,
-  Zap,
-  Sparkles,
-  Package
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -537,24 +535,6 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                 <nav className="space-y-0.5">
                   <button
                     onClick={() => {
-                      setActiveView('workflow-ai');
-                      setActiveProjectId(null);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm font-medium transition-colors ${
-                      activeView === 'workflow-ai' 
-                        ? 'bg-[#3b3c3e] text-white' 
-                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Sparkles className={`h-4 w-4 ${activeView === 'workflow-ai' ? 'text-white' : 'text-purple-400'}`} />
-                      <span>AI Teammates</span>
-                    </div>
-                    <span className="text-[8px] font-bold uppercase tracking-wider bg-purple-900/40 text-purple-200 border border-purple-800/60 px-1 rounded">Beta</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
                       setActiveView('workflow-templates');
                       setActiveProjectId(null);
                     }}
@@ -641,24 +621,6 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                   >
                     <Layers className={`h-4 w-4 ${activeView === 'workflow-task-types' ? 'text-white' : 'text-[#8a8b8c]'}`} />
                     <span>Task types</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveView('workflow-bundles');
-                      setActiveProjectId(null);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm font-medium transition-colors ${
-                      activeView === 'workflow-bundles' 
-                        ? 'bg-[#3b3c3e] text-white' 
-                        : 'hover:bg-[#2d2e30] text-[#a5a6a7] hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Package className={`h-4 w-4 ${activeView === 'workflow-bundles' ? 'text-white' : 'text-[#8a8b8c]'}`} />
-                      <span>Bundles</span>
-                    </div>
-                    <span className="text-[8px] font-bold uppercase tracking-wider bg-neutral-800 text-neutral-400 border border-neutral-700 px-1 rounded font-sans">Pro</span>
                   </button>
                 </nav>
               </>

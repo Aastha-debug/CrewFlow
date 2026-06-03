@@ -195,7 +195,8 @@ const Header = ({
     if (!searchCategory || searchCategory === 'messages') {
       results.messages = [
         { id: 'msg_1', title: 'Scope alignment checklist updated', snippet: 'Aaryan added a new milestone definition to your roadmap layout.', sender: 'aaryan@crewflow.com' },
-        { id: 'msg_2', title: 'Grayscale transition audit request', snippet: 'Check the Monochrome Overhaul project dashboard to audit details.', sender: 'member@crewflow.com' }
+        { id: 'msg_2', title: 'Security audit review schedule', snippet: 'Rotated local signing secrets and verified API endpoints protect middleware configurations.', sender: 'security@crewflow.com' },
+        { id: 'msg_3', title: 'Design specifications feedback', snippet: 'Grayscale layout components finalized for workspace custom fields.', sender: 'design@crewflow.com' }
       ].filter(m => m.title.toLowerCase().includes(q) || m.snippet.toLowerCase().includes(q));
     }
 

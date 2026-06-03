@@ -26,7 +26,7 @@ const MOCK_AVATARS = [
 
 const MOCK_DIRECT_MEMBERS = [
   { _id: 'guest_id', name: 'Guest User', email: 'guest@crewflow.com', role: 'Admin', title: 'Principal Product Manager', dept: 'Product & Design', ooo: false },
-  { _id: 'member_id_1', name: 'Member User', email: 'member@crewflow.com', role: 'Member', title: 'Senior Software Engineer', dept: 'Engineering', ooo: true, oooStart: '2026-06-01', oooEnd: '2026-06-08', oooMsg: 'Away on annual vacation. Please contact tech-leads@crewflow.com for blockers.' },
+  { _id: 'member_id_1', name: 'Member User', email: 'member@crewflow.com', role: 'Member', title: 'Senior Software Engineer', dept: 'Engineering', ooo: false, oooStart: '', oooEnd: '', oooMsg: '' },
   { _id: 'admin_id_1', name: 'Admin User', email: 'admin@crewflow.com', role: 'Admin', title: 'VP of Technology', dept: 'Operations & Engineering', ooo: false }
 ];
 

@@ -104,7 +104,7 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       status: 'Completed',
       progress: 100,
       timePeriod: 'Q2 2026',
-      owner: 'member@crewflow.com',
+      owner: 'guest@crewflow.com',
       team: 'Design',
       type: 'team',
       parentObjective: 'Grayscale Interface Overhaul'
@@ -115,7 +115,7 @@ const StrategyGoalsView = ({ projects = [], setActiveView, setActiveProjectId })
       status: 'At risk',
       progress: 15,
       timePeriod: 'Q3 2026',
-      owner: 'admin@crewflow.com',
+      owner: 'guest@crewflow.com',
       team: 'Engineering',
       type: 'team',
       parentObjective: 'Become the #1 Collaboration suite'

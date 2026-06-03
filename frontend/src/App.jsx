@@ -70,6 +70,26 @@ function AppContent() {
             { _id: 'guest_id', email: 'guest@crewflow.com', role: 'Admin' },
             { _id: 'member_id_1', email: 'member@crewflow.com', role: 'Member' }
           ]
+        },
+        {
+          _id: 'mock_project_3',
+          name: 'Marketing Blitz Q3',
+          description: 'Multi-channel acquisition campaigns and visual copy asset generation pipelines.',
+          createdBy: 'guest_id',
+          members: [
+            { _id: 'guest_id', email: 'guest@crewflow.com', role: 'Admin' },
+            { _id: 'admin_id_1', email: 'admin@crewflow.com', role: 'Admin' }
+          ]
+        },
+        {
+          _id: 'mock_project_4',
+          name: 'Security Infrastructure Audit',
+          description: 'Compliance audits, database credential rotations, and JWT signature verification updates.',
+          createdBy: 'guest_id',
+          members: [
+            { _id: 'guest_id', email: 'guest@crewflow.com', role: 'Admin' },
+            { _id: 'member_id_1', email: 'member@crewflow.com', role: 'Member' }
+          ]
         }
       ];
 
@@ -101,15 +121,41 @@ function AppContent() {
           updatedAt: new Date().toISOString()
         },
         {
-          _id: 'mock_task_3',
+          _id: 'mock_task_4',
+          projectId: 'mock_project_3',
+          projectName: 'Marketing Blitz Q3',
+          assignedTo: { _id: 'guest_id', email: 'guest@crewflow.com' },
+          title: 'Finalize social media copy specifications',
+          description: 'Approve HSL branding guides for post assets.',
+          dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          priority: 'High',
+          status: 'In Progress',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: 'mock_task_5',
+          projectId: 'mock_project_4',
+          projectName: 'Security Infrastructure Audit',
+          assignedTo: { _id: 'guest_id', email: 'guest@crewflow.com' },
+          title: 'Rotate local development signing secrets',
+          description: 'Ensure local keys match production configurations.',
+          dueDate: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
+          priority: 'Low',
+          status: 'To Do',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: 'mock_task_6',
           projectId: 'mock_project_2',
           projectName: 'Monochrome Overhaul',
-          assignedTo: { _id: 'member_id_1', email: 'member@crewflow.com' },
-          title: 'Audit visual consistency of lists and modals',
-          description: 'Double check all form placeholders in monochrome light theme.',
-          dueDate: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-          priority: 'Low',
-          status: 'In Progress',
+          assignedTo: { _id: 'guest_id', email: 'guest@crewflow.com' },
+          title: 'Audit dashboard list container rendering',
+          description: 'Confirm scrolling remains smooth on small displays.',
+          dueDate: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+          priority: 'Medium',
+          status: 'Done',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
