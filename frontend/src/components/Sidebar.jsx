@@ -140,13 +140,8 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
               
               <div className="absolute bottom-2 left-[76px] w-[270px] bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col animate-scale-in text-[#1a1c1c] font-sans">
                 
-                {/* Trial Banner */}
-                <div className="bg-[#fff9f6] text-[#bc5d1a] text-xs px-4 py-2 border-b border-[#f3d9c7] flex justify-between items-center font-semibold">
-                  <span>2 days left in trial. <a href="#" onClick={(e) => { e.preventDefault(); alert("Trial information clicked."); }} className="underline font-bold hover:text-[#994711]">Learn more</a></span>
-                </div>
-
                 {/* Header Info */}
-                <div className="px-4 pt-3 pb-2 flex items-center gap-3">
+                <div className="px-4 pt-3.5 pb-2 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-[#fca5a5] flex items-center justify-center text-[#991b1b] text-base font-bold flex-shrink-0">
                     {effectiveUser.email.split('@')[0].slice(0, 2).toUpperCase()}
                   </div>
@@ -160,7 +155,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                 </div>
 
                 {/* Status Block */}
-                <div className="px-4 pb-3 border-b border-[#e2e2e2]">
+                <div className="px-4 pb-3.5 border-b border-[#e2e2e2]">
                   <button 
                     onClick={() => { setActiveView('my-profile'); setIsProfileMenuOpen(false); }}
                     className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs text-[#1a1c1c] border border-[#c6c6c6] hover:border-black rounded hover:bg-[#f9f9f9] transition-all font-semibold"
