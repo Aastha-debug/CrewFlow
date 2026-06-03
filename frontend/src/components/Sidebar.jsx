@@ -55,7 +55,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
 
   return (
     <div 
-      className={`flex h-screen flex-shrink-0 select-none transition-all duration-300 ease-in-out ${
+      className={`flex h-full flex-shrink-0 select-none transition-all duration-300 ease-in-out ${
         isOpen 
           ? (isSidebarExpanded ? 'w-[296px] opacity-100 visible' : 'w-[72px] opacity-100 visible') 
           : 'w-0 opacity-0 invisible overflow-hidden'
