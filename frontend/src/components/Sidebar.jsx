@@ -63,7 +63,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
     >
       
       {/* 1. Primary Slim Sidebar */}
-      <aside className="w-[72px] bg-[#222325] border-r border-[#2d2e30] flex flex-col items-center py-4 gap-6">
+      <aside className="w-[72px] h-full bg-[#222325] border-r border-[#2d2e30] flex flex-col items-center py-4 gap-6">
 
         {/* Modules List */}
         <div className="flex flex-col gap-4 w-full px-2">
