@@ -138,24 +138,32 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                 onClick={() => setIsProfileMenuOpen(false)}
               />
               
-              <div className="absolute bottom-2 left-[76px] w-64 bg-white border border-[#e2e2e2] rounded-md shadow-xl z-50 py-2 flex flex-col animate-scale-in text-[#1a1c1c] font-sans">
+              <div className="absolute bottom-2 left-[76px] w-[270px] bg-white border border-[#e2e2e2] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col animate-scale-in text-[#1a1c1c] font-sans">
                 
+                {/* Trial Banner */}
+                <div className="bg-[#fff9f6] text-[#bc5d1a] text-xs px-4 py-2 border-b border-[#f3d9c7] flex justify-between items-center font-semibold">
+                  <span>2 days left in trial. <a href="#" onClick={(e) => { e.preventDefault(); alert("Trial information clicked."); }} className="underline font-bold hover:text-[#994711]">Learn more</a></span>
+                </div>
+
                 {/* Header Info */}
-                <div className="px-4 py-3 flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-[#fca5a5] flex items-center justify-center text-[#991b1b] text-xl font-bold flex-shrink-0">
+                <div className="px-4 pt-3 pb-2 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-[#fca5a5] flex items-center justify-center text-[#991b1b] text-base font-bold flex-shrink-0">
                     {effectiveUser.email.split('@')[0].slice(0, 2).toUpperCase()}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[15px] font-bold truncate leading-tight mb-0.5">{effectiveUser.email.split('@')[0]}</p>
-                    <p className="text-xs text-[#777777] truncate">{effectiveUser.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-bold truncate leading-tight flex items-center gap-1.5">
+                      <span>{effectiveUser.email === 'guest@crewflow.com' ? 'Guest User' : (effectiveUser.email === 'admin@crewflow.com' ? 'Admin User' : (effectiveUser.email === 'member@crewflow.com' ? 'Member User' : effectiveUser.email.split('@')[0].charAt(0).toUpperCase() + effectiveUser.email.split('@')[0].slice(1)))}</span>
+                      <span className="h-2 w-2 rounded-full bg-[#d97706] inline-block flex-shrink-0" />
+                    </p>
+                    <p className="text-[11px] text-[#777777] truncate mt-0.5">{effectiveUser.email}</p>
                   </div>
                 </div>
 
                 {/* Status Block */}
-                <div className="px-4 py-2 border-b border-[#e2e2e2] mb-1">
+                <div className="px-4 pb-3 border-b border-[#e2e2e2]">
                   <button 
-                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[13px] text-[#1a1c1c] border border-[#e2e2e2] rounded hover:bg-[#f9f9f9] transition-colors"
+                    onClick={() => { setActiveView('my-profile'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs text-[#1a1c1c] border border-[#c6c6c6] hover:border-black rounded hover:bg-[#f9f9f9] transition-all font-semibold"
                   >
                     <Calendar className="h-4 w-4 text-[#777777]" />
                     <span>Set out of office</span>
@@ -166,8 +174,8 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                 <div className="py-1 border-b border-[#e2e2e2] flex flex-col">
                   {effectiveUser.role === 'Admin' && (
                     <button 
-                      onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                      onClick={() => { alert('Opening Admin Console...'); setIsProfileMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] text-[#1a1c1c] transition-colors text-left"
                     >
                       <Sliders className="h-4 w-4 text-[#777777]" />
                       <span>Admin console</span>
@@ -175,7 +183,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                   )}
                   <button 
                     onClick={() => { if(onNewProject) onNewProject(); setIsProfileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] text-[#1a1c1c] transition-colors text-left"
                   >
                     <Plus className="h-4 w-4 text-[#777777]" />
                     <span>New workspace</span>
@@ -183,7 +191,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                   {effectiveUser.role === 'Admin' && (
                     <button 
                       onClick={() => { if(onOpenInviteModal) onOpenInviteModal(); setIsProfileMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] text-[#1a1c1c] transition-colors text-left"
                     >
                       <UserPlus className="h-4 w-4 text-[#777777]" />
                       <span>Invite to CrewFlow</span>
@@ -194,22 +202,22 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                 {/* Personal Block */}
                 <div className="py-1 border-b border-[#e2e2e2] flex flex-col">
                   <button 
-                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                    onClick={() => { setActiveView('my-profile'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] text-[#1a1c1c] transition-colors text-left"
                   >
                     <User className="h-4 w-4 text-[#777777]" />
                     <span>Profile</span>
                   </button>
                   <button 
-                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                    onClick={() => { setActiveView('my-profile'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] text-[#1a1c1c] transition-colors text-left"
                   >
                     <Settings className="h-4 w-4 text-[#777777]" />
                     <span>Settings</span>
                   </button>
                   <button 
-                    onClick={() => { alert('Coming soon!'); setIsProfileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left"
+                    onClick={() => { alert('Add another account option clicked.'); setIsProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] text-[#1a1c1c] transition-colors text-left"
                   >
                     <Plus className="h-4 w-4 text-[#777777]" />
                     <span>Add another account</span>
@@ -224,7 +232,7 @@ const Sidebar = ({ isOpen, activeModule, setActiveModule, activeView, setActiveV
                       logout();
                       if (onLogout) onLogout();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-[#f9f9f9] transition-colors text-left text-[#1a1c1c]"
+                    className="w-full flex items-center gap-3 px-4 py-2 text-xs font-semibold hover:bg-[#f9f9f9] transition-colors text-left text-[#1a1c1c]"
                   >
                     <LogOut className="h-4 w-4 text-[#777777]" />
                     <span>Log out</span>
